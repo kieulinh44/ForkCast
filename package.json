@@ -1,0 +1,14 @@
+{
+  "name": "forkcast",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ForkCast starter dashboard — MBAX 6418 group final project",
+  "scripts": {
+    "start": "python -m http.server 8014 --bind 127.0.0.1",
+    "test": "node --test tests/state.test.cjs",
+    "test:ui": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1"
+  }
+}
