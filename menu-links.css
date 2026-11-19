@@ -1,0 +1,6 @@
+/* Menu-link controls wrap on small screens without changing the dashboard theme. */
+#menu-link-form > label { margin-bottom: 8px; }
+.menu-link-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.menu-link-actions a { display: inline-flex; align-items: center; text-decoration: none; }
+#menu-url[aria-invalid="true"] { border-color: #a23f2e; }
+#menu-link-message { overflow-wrap: anywhere; margin-bottom: 0; }

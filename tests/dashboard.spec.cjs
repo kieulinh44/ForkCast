@@ -1,0 +1,102 @@
+const { test, expect } = require('@playwright/test');
+test('proposal dashboard is accessible and responsive', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'A better way to choose your next bite.' })).toBeVisible();
+  await expect(page.locator('#view-overview').getByText('Linh · Jamie · Jana · Kelly · Mirina')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'A foundation to build on.' })).toHaveCount(0);
+  await expect(page.locator('#view-overview .build-note')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Project brief', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'The idea behind ForkCast' })).toBeVisible();
+  await expect(page.getByText('Dining out should be an enjoyable experience', { exact: false })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('button', { name: 'Taste profile', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('profile, mood, and meal feedback persist locally and can be cleared', async ({ page }) => {
+  await page.goto('/#profile');
+  await page.getByLabel('Display name').fill('Linh');
+  await page.getByLabel('Budget per dish (USD)').fill('25');
+  await page.getByLabel('Allergies', { exact: true }).fill('Sample allergy');
+  await page.getByRole('button', { name: 'Save taste profile' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Taste profile saved' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Display name')).toHaveValue('Linh');
+  await page.getByRole('button', { name: 'Mood & cravings', exact: true }).click();
+  await page.getByLabel('Comforting', { exact: true }).check();
+  await page.getByLabel("Or tell us what you're craving").fill('Warm soup');
+  await page.getByRole('button', { name: 'Save my craving' }).click();
+  await page.reload();
+  await expect(page.getByLabel('Comforting', { exact: true })).toBeChecked();
+  await expect(page.getByLabel("Or tell us what you're craving")).toHaveValue('Warm soup');
+  await page.getByRole('button', { name: 'Meal feedback', exact: true }).click();
+  await page.getByLabel('Dish name').fill('<img src=x onerror=alert(1)>');
+  await page.getByLabel('Your rating').selectOption('4');
+  await page.getByLabel('Your notes').fill('Good flavor');
+  await page.getByRole('button', { name: 'Save meal feedback' }).click();
+  await page.reload();
+  await expect(page.locator('#feedback-list')).toContainText('<img src=x onerror=alert(1)>');
+  await expect(page.locator('#feedback-list img')).toHaveCount(0);
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Clear local drafts' }).click();
+  await expect(page.locator('#feedback-list')).toContainText('No meal notes yet');
+  await page.reload();
+  await page.getByRole('button', { name: 'Taste profile', exact: true }).click();
+  await expect(page.getByLabel('Display name')).toHaveValue('');
+});
+
+test('menu photo previews locally and rejects unsupported, oversized, and corrupt uploads', async ({ page }) => {
+  await page.goto('/#menu');
+  const file = page.locator('#menu-file');
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
+  await file.setInputFiles({ name: 'menu.png', mimeType: 'image/png', buffer: png });
+  await expect(page.getByAltText('Your uploaded restaurant menu')).toBeVisible();
+  await page.getByRole('button', { name: 'Remove photo' }).click();
+  await expect(page.getByAltText('Your uploaded restaurant menu')).toBeHidden();
+  await file.setInputFiles({ name: 'menu.txt', mimeType: 'text/plain', buffer: Buffer.from('menu') });
+  await expect(page.locator('#menu-message')).toContainText('Choose a JPEG, PNG, or WebP');
+  await file.setInputFiles({ name: 'large.png', mimeType: 'image/png', buffer: Buffer.alloc(10 * 1024 * 1024 + 1) });
+  await expect(page.locator('#menu-message')).toContainText('10 MB');
+  await file.setInputFiles({ name: 'bad.png', mimeType: 'image/png', buffer: Buffer.from('not an image') });
+  await expect(page.locator('#menu-message')).toContainText('could not be opened');
+  await expect(page.getByAltText('Your uploaded restaurant menu')).toBeHidden();
+  await expect(page.getByLabel('Restaurant menu link')).toBeEnabled();
+});
+
+test('restaurant menu links can be saved, restored, opened, and removed safely', async ({ page }) => {
+  await page.goto('/#menu');
+  const input = page.getByLabel('Restaurant menu link');
+  await expect(input).toBeEnabled();
+  await input.fill('https://example.com/menu?dinner=1');
+  await page.getByRole('button', { name: 'Save menu link', exact: true }).click();
+  await expect(page.locator('#menu-link-message')).toContainText('saved');
+  const openLink = page.getByRole('link', { name: 'Open saved menu' });
+  await expect(openLink).toHaveAttribute('href', 'https://example.com/menu?dinner=1');
+  await expect(openLink).toHaveAttribute('rel', 'noopener noreferrer');
+  await page.reload();
+  await expect(input).toHaveValue('https://example.com/menu?dinner=1');
+  await input.fill('javascript:alert(1)');
+  await page.getByRole('button', { name: 'Save menu link', exact: true }).click();
+  await expect(page.locator('#menu-link-message')).toContainText('http:// or https://');
+  await expect(openLink).toHaveAttribute('href', 'https://example.com/menu?dinner=1');
+  await page.getByRole('button', { name: 'Remove saved link' }).click();
+  await expect(input).toHaveValue('');
+  await expect(openLink).toBeHidden();
+  await page.reload();
+  await expect(input).toHaveValue('');
+});
+
+test('corrupt drafts and unavailable storage do not break navigation or forms', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('forkcast.draft.v1', '{'));
+  await page.goto('/#profile');
+  await expect(page.getByLabel('Display name')).toHaveValue('');
+  await page.evaluate(() => { Storage.prototype.setItem = () => { throw new Error('Quota exceeded'); }; });
+  await page.getByLabel('Display name').fill('Test');
+  await page.getByRole('button', { name: 'Save taste profile' }).click();
+  await expect(page.locator('#toast')).toContainText('storage is unavailable');
+  await page.getByRole('button', { name: 'Overview', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'A better way to choose your next bite.' })).toBeVisible();
+});

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ForkCast — a personalized restaurant menu assistant. MBAX 6418 group project starter dashboard.">
+  <title>ForkCast · Your table, your taste</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%232b493c'/%3E%3Ctext x='12' y='29' font-size='28' fill='%23fff' font-family='Georgia'%3Ef%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="menu-links.css">
+  <script src="state.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="shell">
+  <aside class="sidebar" aria-label="Application navigation">
+    <a class="brand" href="#overview" aria-label="ForkCast home"><span class="brand-mark">f<span>↗</span></span><span>ForkCast<small>YOUR TABLE, YOUR TASTE</small></span></a>
+    <p class="nav-label">YOUR WORKSPACE</p>
+    <nav aria-label="Main navigation">
+      <button class="nav-item active" data-view="overview" aria-current="page"><span aria-hidden="true">◫</span>Overview</button>
+      <button class="nav-item" data-view="profile"><span aria-hidden="true">◎</span>Taste profile</button>
+      <button class="nav-item" data-view="menu"><span aria-hidden="true">▤</span>My menu</button>
+      <button class="nav-item" data-view="mood"><span aria-hidden="true">☼</span>Mood &amp; cravings</button>
+      <button class="nav-item" data-view="feedback"><span aria-hidden="true">☆</span>Meal feedback</button>
+    </nav>
+    <div class="nav-divider"></div>
+    <p class="nav-label">THE PROJECT</p>
+    <nav aria-label="Project navigation"><button class="nav-item" data-view="brief"><span aria-hidden="true">≡</span>Project brief</button></nav>
+    <div class="sidebar-bottom"><span class="stage-dot"></span> Starter dashboard<small>MBAX 6418 · Group final project</small></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div>Workspace <span aria-hidden="true">/</span> <strong id="breadcrumb">Overview</strong></div><span class="pill">Local preview · No AI connected</span></header>
+    <main id="main" tabindex="-1">
+      <section id="view-overview" class="view" aria-labelledby="overview-title">
+        <div class="page-top"><div><p class="eyebrow">A LITTLE LESS GUESSWORK. A LITTLE MORE DELICIOUS.</p><h1 id="overview-title">A better way to choose<br>your next bite.</h1><p class="lede">Your tastes. Your cravings. The menu in front of you.<br>Bring them together with ForkCast.</p></div><div class="plate-art" aria-hidden="true"><div class="plate-ring"><span class="leaf leaf-one"></span><span class="leaf leaf-two"></span><span class="leaf leaf-three"></span><span class="tomato"></span><span class="grain"></span><span class="plate-caption">made for your taste</span></div></div></div>
+        <div class="section-heading"><h2>Your next meal starts here</h2><span class="muted">Start with what makes you, you.</span></div>
+        <div class="journey">
+          <button class="journey-row" data-view="profile"><span class="step">01</span><span><strong>Make it personal</strong><small>Preferences, dietary needs, spice tolerance, and budget.</small></span><span class="row-tag" id="profile-status">Set up your profile</span><span aria-hidden="true">↗</span></button>
+          <button class="journey-row" data-view="menu"><span class="step">02</span><span><strong>Bring your menu</strong><small>Preview a menu photo or prepare a restaurant menu link.</small></span><span class="row-tag">Add a menu</span><span aria-hidden="true">↗</span></button>
+          <button class="journey-row" data-view="mood"><span class="step">03</span><span><strong>Tell us what sounds good</strong><small>Comforting, light, adventurous — or something all your own.</small></span><span class="row-tag" id="mood-status">Pick your mood</span><span aria-hidden="true">↗</span></button>
+        </div>
+        <div class="overview-bottom">
+          <article class="concept"><p class="eyebrow">WHY WE'RE BUILDING THIS</p><h2>Less menu overwhelm.<br>More meals that fit.</h2><p>Restaurant menus can be overwhelming, especially when dishes or ingredients are unfamiliar. ForkCast is our proposed AI-powered menu assistant, designed to make choosing a meal more personal and approachable.</p><button class="text-button" data-view="brief">Read our project brief <span aria-hidden="true">→</span></button></article>
+          <div class="concept" aria-label="Project contributors"><p class="eyebrow">CREATED BY OUR TEAM</p><p>Linh · Jamie · Jana · Kelly · Mirina</p></div>
+        </div>
+      </section>
+      <section id="view-profile" class="view" hidden aria-labelledby="profile-title"><p class="eyebrow">01 / MAKE IT PERSONAL</p><h1 id="profile-title">Your taste, at a glance.</h1><p class="lede">A starting point for meals that work for you. Use sample details while testing.</p><form id="profile-form" class="panel form-grid"><label>Display name<input name="name" maxlength="80" placeholder="What should we call you?"></label><label>Budget per dish (USD)<input name="budget" type="number" min="0" max="10000" step="0.01" placeholder="e.g. 25"></label><label>Favorite foods &amp; cuisines<textarea name="favorites" maxlength="1000" placeholder="Thai food, fresh herbs, noodles…"></textarea></label><label>Foods you dislike<textarea name="dislikes" maxlength="1000" placeholder="Ingredients or dishes you prefer to skip"></textarea></label><label>Dietary &amp; religious requirements<textarea name="dietary" maxlength="1000" placeholder="Vegetarian, halal, kosher, or other needs"></textarea></label><label>Allergies<textarea name="allergies" maxlength="1000" placeholder="Use sample information for this prototype"></textarea></label><label>Spice tolerance<select name="spice"><option value="">Choose your comfort level</option><option>None</option><option>Mild</option><option>Medium</option><option>Hot</option></select></label><div class="form-footer"><p class="muted">Stored on this browser only. Not shared with your team.</p><button class="primary" type="submit">Save taste profile <span aria-hidden="true">→</span></button></div></form><p class="safety">Allergy note: a menu cannot confirm ingredients or cross-contact. Always check directly with restaurant staff. ForkCast does not verify whether food is safe.</p></section>
+      <section id="view-menu" class="view" hidden aria-labelledby="menu-title">
+        <p class="eyebrow">02 / BRING YOUR MENU</p><h1 id="menu-title">What's on the menu?</h1>
+        <p class="lede">Preview a menu photo or save a restaurant menu link.</p>
+        <div class="panel"><span class="outline-label">PHOTO PREVIEW ONLY</span><h2>Upload a restaurant menu</h2>
+          <p class="muted">Choose a JPEG, PNG, or WebP image up to 10 MB. This preview stays on your device; it is not sent to a model or saved after refresh.</p>
+          <label class="upload-zone" for="menu-file"><span class="upload-symbol" aria-hidden="true">↑</span><strong>Choose a menu photo</strong><span>JPEG, PNG, or WebP · up to 10 MB</span><input id="menu-file" type="file" accept="image/jpeg,image/png,image/webp"></label>
+          <p id="menu-message" role="status"></p><img id="menu-preview" hidden alt="Your uploaded restaurant menu"><button type="button" class="secondary" id="remove-photo" hidden>Remove photo</button><hr>
+          <form id="menu-link-form" novalidate>
+            <label for="menu-url">Restaurant menu link</label>
+            <input id="menu-url" name="menuUrl" type="url" maxlength="2048" placeholder="https://restaurant.example/menu" aria-describedby="menu-link-help menu-link-message">
+            <p id="menu-link-help" class="muted">Paste a full http:// or https:// menu URL. Your saved link stays on this browser; the website is not imported or analyzed.</p>
+            <div class="menu-link-actions"><button class="primary" type="submit">Save menu link</button><a id="open-menu-link" class="secondary" target="_blank" rel="noopener noreferrer" hidden>Open saved menu</a><button class="secondary" type="button" id="remove-menu-link" hidden>Remove saved link</button></div>
+            <p id="menu-link-message" role="status" class="muted"></p>
+          </form>
+          <div class="notice"><strong>AI menu recognition is not connected yet.</strong><p>There is no dish extraction, website fetching, or recommendation generation in this starter.</p></div>
+        </div>
+      </section>
+      <section id="view-mood" class="view" hidden aria-labelledby="mood-title"><p class="eyebrow">03 / FOLLOW YOUR CRAVING</p><h1 id="mood-title">What sounds good today?</h1><p class="lede">Choose a mood, add a craving, and save it for your next step.</p><form id="mood-form" class="panel"><fieldset><legend>Today's food mood</legend><div class="mood-options"><label><input type="radio" name="mood" value="Comforting"><span>Comforting</span></label><label><input type="radio" name="mood" value="Hearty"><span>Hearty</span></label><label><input type="radio" name="mood" value="Refreshing"><span>Refreshing</span></label><label><input type="radio" name="mood" value="Light"><span>Light</span></label><label><input type="radio" name="mood" value="Adventurous"><span>Adventurous</span></label></div></fieldset><label>Or tell us what you're craving<textarea name="craving" maxlength="1000" placeholder="Something warm and savory, with a little crunch…"></textarea></label><div class="form-footer"><p class="muted">A saved preference, not an AI recommendation.</p><button type="submit" class="primary">Save my craving →</button></div></form></section>
+      <section id="view-feedback" class="view" hidden aria-labelledby="feedback-title"><p class="eyebrow">AFTER THE LAST BITE</p><h1 id="feedback-title">Worth ordering again?</h1><p class="lede">Keep a little record of what worked — and what didn't.</p><form id="feedback-form" class="panel form-grid"><label>Dish name<input name="dish" required maxlength="120" placeholder="What did you order?"></label><label>Your rating<select name="rating" required><option value="">Choose a rating</option><option value="5">5 — Loved it</option><option value="4">4 — Really good</option><option value="3">3 — It was okay</option><option value="2">2 — Not for me</option><option value="1">1 — Wouldn't order again</option></select></label><label class="full">Your notes<textarea name="notes" maxlength="1000" placeholder="Flavor, portion, spice, or anything to remember"></textarea></label><div class="form-footer"><p class="muted">Saved locally. Preference learning is not implemented yet.</p><button type="submit" class="primary">Save meal feedback →</button></div></form><div class="section-heading"><h2>Your meal notes</h2><span class="muted">Only on this browser</span></div><div id="feedback-list" class="panel"><p class="muted">No meal notes yet. Your first review starts the story.</p></div></section>
+      <section id="view-brief" class="view" hidden aria-labelledby="brief-title"><p class="eyebrow">MBAX 6418 / GROUP FINAL PROJECT</p><h1 id="brief-title">The idea behind ForkCast</h1><p class="lede">An AI-powered restaurant menu assistant, built around individual taste.</p><article class="panel brief-copy"><h2>The problem we're solving</h2><p>Dining out should be an enjoyable experience, whether it is lunch with a mentor or dinner with friends. However, choosing what to order can sometimes be overwhelming. Restaurant menus often offer numerous options, making it difficult for customers to decide, especially when they are unfamiliar with certain dishes or ingredients. Many customers also have dietary restrictions, food preferences, religious dietary requirements, budgets, or specific cravings that make selecting a meal more challenging.</p><p>Our group proposes developing an AI-powered restaurant menu assistant that simplifies the decision-making process by offering personalized food recommendations based on individual preferences and the restaurant’s available menu.</p><h2>Our proposed core features</h2><dl class="feature-list"><div><dt>Personalized taste profile</dt><dd>Food preferences, dislikes, dietary restrictions, allergies, religious dietary requirements, spice tolerance, and budget.</dd></div><div><dt>Restaurant menu recognition</dt><dd>Upload a photo of a restaurant menu.</dd></div><div><dt>Mood-based recommendations</dt><dd>Select a food mood — comforting, hearty, refreshing, light, or adventurous — or describe a craving in your own words.</dd></div><div><dt>Feedback and preference learning</dt><dd>Rate an ordered dish and leave written feedback to inform future recommendations.</dd></div><div><dt>Mobile interface</dt><dd>Access the website or application from a mobile device.</dd></div></dl><h2>Professor's feedback</h2><p>Professor Dobolyi supported the concept and suggested allowing restaurant website or direct menu links in addition to photos. He asked us to decide on the API endpoints before getting too far into development.</p><h2>The build, so far</h2><p>This initial dashboard uses HTML, CSS, and JavaScript. Python and SQLite are proposed for the future backend. Hermes and Codex are the proposed AI coding tools; GitHub supports version control, documentation, and collaboration. Runtime AI models and endpoints are still to be selected.</p><h2>Our team</h2><p>Linh · Jamie · Jana · Kelly · Mirina</p><p class="muted">Source: our ForkCast project proposal and the professor's feedback. This is a starter interface, not the finished recommendation system.</p></article></section>
+      <footer class="footer"><span>ForkCast <span aria-hidden="true">/</span> Made for your taste.</span><button type="button" id="clear-data" class="text-button">Clear local drafts</button></footer>
+    </main>
+  </div>
+</div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
