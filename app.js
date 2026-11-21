@@ -26,6 +26,9 @@ showView(location.hash.slice(1));
 let storage;
 try { storage = window.localStorage; } catch { storage = null; }
 let draft = ForkCastState.load(storage);
+let mealPhoto = '';
+let mealPhotoVersion = 0;
+let mealPhotoProcessing = false;
 let toastTimer;
 function notify(message) {
   const toast = document.getElementById('toast');
@@ -63,6 +66,14 @@ function renderFeedback() {
     const notes = document.createElement('p');
     notes.textContent = entry.notes;
     article.append(name, rating, notes);
+    if (typeof entry.photo === 'string' && entry.photo.length <= 700000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(entry.photo)) {
+      const photo = document.createElement('img');
+      photo.className = 'review-photo';
+      photo.alt = `Meal photo for ${entry.dish}`;
+      photo.src = entry.photo;
+      photo.loading = 'lazy';
+      article.append(photo);
+    }
     list.append(article);
   });
 }
@@ -96,21 +107,31 @@ document.getElementById('mood-form').addEventListener('submit', event => {
 });
 document.getElementById('feedback-form').addEventListener('submit', event => {
   event.preventDefault();
+  if (mealPhotoProcessing) return notify('Please wait while your photo is prepared.');
   const data = new FormData(event.currentTarget);
   const dish = data.get('dish').trim();
   const rating = Number(data.get('rating'));
   if (!dish || !Number.isInteger(rating) || rating < 1 || rating > 5) return notify('Add a dish name and a rating from 1 to 5.');
-  draft.feedback.unshift({ dish, rating, notes: data.get('notes').trim() });
-  persist('Meal feedback saved on this browser.');
+  const entry = { dish, rating, notes: data.get('notes').trim() };
+  if (mealPhoto) entry.photo = mealPhoto;
+  const next = { ...draft, feedback: [entry, ...draft.feedback] };
+  if (!ForkCastState.save(storage, next)) {
+    notify('Review not saved: browser storage is full or unavailable. Your draft is still here. Remove the photo and retry, or free browser storage.');
+    return;
+  }
+  draft = next;
+  notify('Meal feedback saved on this browser.');
   renderFeedback();
   event.currentTarget.reset();
+  resetMealPhoto();
 });
 document.getElementById('clear-data').addEventListener('click', () => {
-  if (!window.confirm('Clear your ForkCast profile, mood, saved menu link, and meal feedback from this browser? This cannot be undone.')) return;
+  if (!window.confirm('Clear your ForkCast profile, mood, saved menu link, meal feedback, and saved meal photos from this browser? This cannot be undone.')) return;
   draft = ForkCastState.emptyState();
   try { storage.removeItem(ForkCastState.KEY); notify('Local drafts cleared.'); }
   catch { notify('Drafts cleared from this page, but browser storage is unavailable.'); }
   document.getElementById('feedback-form').reset();
+  resetMealPhoto();
   restoreForms();
 });
 restoreForms();
@@ -203,4 +224,76 @@ document.getElementById('remove-menu-link').addEventListener('click', () => {
   renderMenuLink();
   document.getElementById('menu-link-message').textContent = saved ? 'Saved link removed.' : 'Link removed from this page, but browser storage is unavailable.';
   document.getElementById('menu-url').focus();
+});
+
+// Normalize meal photos to a small JPEG before browser-local storage.
+// No original photo bytes or camera metadata are retained.
+function resetMealPhoto(message = '') {
+  mealPhotoVersion++;
+  mealPhoto = '';
+  mealPhotoProcessing = false;
+  const preview = document.getElementById('meal-photo-preview');
+  preview.hidden = true;
+  preview.removeAttribute('src');
+  document.getElementById('meal-camera').value = '';
+  document.getElementById('meal-gallery').value = '';
+  document.getElementById('remove-meal-photo').hidden = true;
+  document.getElementById('meal-photo-message').textContent = message;
+  document.querySelector('#feedback-form button[type=submit]').disabled = false;
+}
+async function prepareMealPhoto(file) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('Choose a JPEG, PNG, or WebP photo. Convert HEIC photos to JPEG first.');
+  if (file.size > 10 * 1024 * 1024) throw new Error('Choose a photo up to 10 MB.');
+  const url = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.src = url;
+    try { await image.decode(); }
+    catch { throw new Error('This photo could not be opened. Choose another image.'); }
+    if (!image.naturalWidth || !image.naturalHeight || image.naturalWidth * image.naturalHeight > 40000000) throw new Error('This photo has too many pixels. Choose a smaller image.');
+    const ratio = Math.min(1, 1280 / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * ratio));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * ratio));
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Photo preparation is unavailable in this browser.');
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const photo = canvas.toDataURL('image/jpeg', 0.75);
+    if (!photo.startsWith('data:image/jpeg;base64,') || photo.length > 700000) throw new Error('This photo is still too large to save locally. Try a smaller photo.');
+    return photo;
+  } finally { URL.revokeObjectURL(url); }
+}
+async function selectMealPhoto(event) {
+  const file = event.currentTarget.files[0];
+  if (!file) return; // Cancelling the picker keeps an existing selection.
+  resetMealPhoto();
+  const version = mealPhotoVersion;
+  mealPhotoProcessing = true;
+  document.querySelector('#feedback-form button[type=submit]').disabled = true;
+  document.getElementById('remove-meal-photo').hidden = false;
+  document.getElementById('meal-photo-message').textContent = 'Preparing your photo…';
+  try {
+    const photo = await prepareMealPhoto(file);
+    if (version !== mealPhotoVersion) return;
+    mealPhoto = photo;
+    const preview = document.getElementById('meal-photo-preview');
+    preview.src = photo;
+    preview.hidden = false;
+    document.getElementById('meal-photo-message').textContent = 'Photo ready. Save your review to keep it on this browser.';
+  } catch (error) {
+    if (version === mealPhotoVersion) resetMealPhoto(error.message || 'Photo could not be prepared. Try another image.');
+  } finally {
+    if (version === mealPhotoVersion) {
+      mealPhotoProcessing = false;
+      document.querySelector('#feedback-form button[type=submit]').disabled = false;
+    }
+  }
+}
+document.getElementById('meal-camera').addEventListener('change', selectMealPhoto);
+document.getElementById('meal-gallery').addEventListener('change', selectMealPhoto);
+document.getElementById('remove-meal-photo').addEventListener('click', () => {
+  resetMealPhoto('Photo removed. You can save the review without a photo.');
+  document.getElementById('meal-gallery').focus();
 });

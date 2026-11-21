@@ -17,6 +17,7 @@ ForkCast aims to recommend dishes from a restaurant's available menu based on an
 - Local menu-photo preview with file-type and size validation.
 - Menu-link entry, validation, local saving, opening, and removal.
 - Mood/craving selection and meal-feedback forms.
+- Optional meal photo from camera or gallery, with preview/removal and browser-local saving alongside the review. JPEG, PNG, and WebP inputs up to 10 MB are resized to at most 1280 pixels on the longest edge and re-encoded as JPEG. HEIC must be converted first. Camera capture depends on the phone/browser and has not been verified on physical phones yet.
 - Browser-local persistence and a confirmed clear-drafts action.
 
 **This is a frontend foundation, not the finished AI application.** It does not fetch restaurant websites, recognize menu text, generate recommendations, or learn preferences. AI models and API endpoints have not been selected. Python and SQLite are proposed for a future backend; no database or authentication is implemented yet.
@@ -49,7 +50,9 @@ The browser tests use installed Chrome and start a local Python server if port 8
 | --- | --- |
 | `index.html` | Dashboard sections, proposal text, forms, and credits |
 | `styles.css` | Main theme and responsive layout |
+| `clean-girl.css` | Warm ivory, blush, and taupe styling; typography and component refinements |
 | `menu-links.css` | Menu-link control styling |
+| `meal-photos.css` | Optional meal-photo controls and previews |
 | `app.js` | Navigation and user interactions |
 | `state.js` | Browser-local draft loading and saving |
 | `tests/` | State and browser regression tests |
@@ -59,5 +62,7 @@ Make changes on personal/feature branches, run the tests, then open a pull reque
 ## Privacy and limitations
 
 Profiles, cravings, feedback, and saved menu links belong only to the current browser and origin; they are not shared between teammates or devices. Use sample information for testing. Menu photos are previewed locally and are not retained after refreshing. The app sends no photos or profile details to an AI service. Opening a saved link visits the restaurant's website in a separate tab.
+
+Meal-review photos (unlike menu previews) are kept with saved feedback in browser storage. They are not uploaded or committed to GitHub. Clearing local drafts or site data removes them. Storage is limited: if saving fails, the form and photo remain on screen so you can retry or remove the photo; no success message is shown. Unsaved forms are lost on refresh. This is not a durable photo backup or a shared gallery.
 
 ForkCast cannot establish whether food is safe for someone with allergies or confirm ingredients, religious compliance, or cross-contact. Always verify these with restaurant staff.
