@@ -1,4 +1,26 @@
 const { test, expect } = require('@playwright/test');
+test('meal photos are optional and persist with reviews after reload', async ({ page }) => {
+  await page.goto('/#feedback');
+  await expect(page.getByLabel('Take a photo', { exact: true })).toHaveAttribute('capture', 'environment');
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
+  await page.getByLabel('Choose from gallery', { exact: true }).setInputFiles({ name: 'meal.png', mimeType: 'image/png', buffer: png });
+  await expect(page.locator('#meal-photo-preview')).toBeVisible();
+  await page.getByLabel('Dish name').fill('Noodle bowl');
+  await page.getByLabel('Your rating').selectOption('5');
+  await page.getByLabel('Your notes').fill('Loved the herbs');
+  await page.getByRole('button', { name: 'Save meal feedback' }).click();
+  await expect(page.locator('#meal-photo-preview')).toBeHidden();
+  await page.reload();
+  const photo = page.getByAltText('Meal photo for Noodle bowl', { exact: true });
+  await expect(photo).toBeVisible();
+  expect(await photo.evaluate(image => image.complete && image.naturalWidth > 0)).toBe(true);
+  await expect(page.locator('#feedback-list')).toContainText('Loved the herbs');
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByRole('button', { name: 'Clear local drafts' }).click();
+  await page.reload();
+  await expect(page.locator('#feedback-list img')).toHaveCount(0);
+});
+
 test('proposal dashboard is accessible and responsive', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -14,6 +36,50 @@ test('proposal dashboard is accessible and responsive', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Taste profile', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(errors).toEqual([]);
+});
+
+test('meal photo validation, removal, camera selection, and storage failure preserve the review', async ({ page }) => {
+  await page.goto('/#feedback');
+  const gallery = page.getByLabel('Choose from gallery', { exact: true });
+  await gallery.setInputFiles({ name: 'bad.txt', mimeType: 'text/plain', buffer: Buffer.from('bad') });
+  await expect(page.locator('#meal-photo-message')).toContainText('JPEG, PNG, or WebP');
+  await gallery.setInputFiles({ name: 'large.jpg', mimeType: 'image/jpeg', buffer: Buffer.alloc(10 * 1024 * 1024 + 1) });
+  await expect(page.locator('#meal-photo-message')).toContainText('10 MB');
+  await gallery.setInputFiles({ name: 'bad.png', mimeType: 'image/png', buffer: Buffer.from('bad') });
+  await expect(page.locator('#meal-photo-message')).toContainText('could not be opened');
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
+  await gallery.setInputFiles({ name: 'meal.png', mimeType: 'image/png', buffer: png });
+  await expect(page.locator('#meal-photo-preview')).toBeVisible();
+  await page.getByRole('button', { name: 'Remove meal photo' }).click();
+  await expect(page.locator('#meal-photo-preview')).toBeHidden();
+  await page.getByLabel('Take a photo', { exact: true }).setInputFiles({ name: 'camera.jpg', mimeType: 'image/png', buffer: png });
+  await expect(page.locator('#meal-photo-preview')).toBeVisible();
+  await page.getByLabel('Dish name').fill('Keep my draft');
+  await page.getByLabel('Your rating').selectOption('4');
+  await page.evaluate(() => { Storage.prototype.setItem = () => { throw new Error('full'); }; });
+  await page.getByRole('button', { name: 'Save meal feedback' }).click();
+  await expect(page.locator('#toast')).toContainText('Review not saved');
+  await expect(page.getByLabel('Dish name')).toHaveValue('Keep my draft');
+  await expect(page.locator('#meal-photo-preview')).toBeVisible();
+  await expect(page.locator('#feedback-list')).toContainText('No meal notes yet');
+});
+
+test('large meal photos are resized and photo controls fit a mobile screen', async ({ page }) => {
+  await page.goto('/#feedback');
+  const base64 = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2000;
+    canvas.height = 1500;
+    canvas.getContext('2d').fillRect(0, 0, 2000, 1500);
+    return canvas.toDataURL('image/png').split(',')[1];
+  });
+  await page.getByLabel('Choose from gallery', { exact: true }).setInputFiles({ name: 'large-meal.png', mimeType: 'image/png', buffer: Buffer.from(base64, 'base64') });
+  await expect(page.locator('#meal-photo-preview')).toBeVisible();
+  expect(await page.locator('#meal-photo-preview').evaluate(image => [image.naturalWidth, image.naturalHeight])).toEqual([1280, 960]);
+  await page.screenshot({ path: 'test-results/meal-feedback-desktop.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/meal-feedback-mobile.png', fullPage: true });
 });
 
 test('profile, mood, and meal feedback persist locally and can be cleared', async ({ page }) => {

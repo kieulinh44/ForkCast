@@ -1,0 +1,9 @@
+.meal-photo-field { margin: 0; min-width: 0; }
+.meal-photo-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.photo-choice { position: relative; overflow: hidden; display: inline-flex; justify-content: center; cursor: pointer; }
+.photo-choice input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.photo-choice:focus-within { outline: 3px solid var(--accent); outline-offset: 4px; }
+#meal-photo-help { margin-top: 14px; margin-bottom: 0; font-size: 11px; }
+#meal-photo-message { margin: 10px 0; }
+#meal-photo-preview, .review-photo { display: block; max-width: 100%; width: auto; height: auto; max-height: 320px; object-fit: contain; border: 1px solid var(--line); border-radius: 9px; margin-top: 15px; }
+#feedback-form button:disabled { opacity: .6; cursor: wait; }

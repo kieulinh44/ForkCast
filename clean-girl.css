@@ -1,0 +1,135 @@
+/* ForkCast / clean-girl direction: ivory, oat, blush, and quiet editorial type.
+   Kept separate from layout and feature styles so the theme is easy to evolve. */
+:root {
+  --paper: #fbf8f5;
+  --white: #fffdfb;
+  --ink: #493d36;
+  --muted: #75675f;
+  --line: #e6dcd4;
+  --sage: #f0e6e0;
+  --accent: #8d5f57;
+  --soft: #eeded5;
+  --radius: 18px;
+  --hover: #f5eeea;
+  --field-border: #ad9c90;
+}
+
+body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; line-height: 1.7; }
+::selection { background: var(--soft); color: var(--ink); }
+h1, h2 { font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif; }
+h1 { font-size: clamp(36px, 3.7vw, 55px); line-height: 1.12; letter-spacing: -1.9px; }
+h2 { line-height: 1.2; }
+
+.sidebar { background: #f7f1eb; padding-top: 38px; }
+.brand { font-weight: 400; font-size: 31px; letter-spacing: -1.6px; gap: 11px; margin-bottom: 56px; }
+.brand small { font-size: 8px; letter-spacing: 1.35px; font-weight: 500; margin-top: 4px; }
+.brand-mark { min-width: 42px; height: 42px; border-radius: 50%; background: var(--soft); color: var(--ink); font-size: 34px; }
+.brand-mark span { display: none; }
+.nav-label { letter-spacing: 1.7px; font-weight: 500; font-size: 10px; }
+.nav-item { color: var(--muted); border-radius: 30px; font-size: 13px; padding: 12px 15px; margin-bottom: 8px; }
+.nav-item span { font-size: 19px; }
+.nav-item.active { background: #eadbd2; color: var(--ink); font-weight: 600; }
+.nav-item:hover { background: var(--sage); color: var(--ink); }
+.nav-divider { margin: 26px 10px; }
+.sidebar-bottom { color: var(--muted); font-size: 11px; }
+.stage-dot { background: var(--accent); width: 6px; height: 6px; }
+
+.topbar { height: 80px; font-size: 12px; background: var(--paper); }
+.breadcrumbs { display: flex; align-items: center; gap: 13px; }
+.breadcrumbs > span { color: var(--muted); }
+.breadcrumbs a { display: inline-flex; align-items: center; min-height: 44px; color: var(--muted); text-decoration: underline; text-underline-offset: 4px; }
+.breadcrumbs a:hover { color: var(--accent); }
+.pill { border-color: var(--line); background: transparent; color: var(--muted); letter-spacing: .2px; padding: 7px 13px; }
+main { max-width: 1320px; padding: 48px 48px 22px; }
+.eyebrow { color: var(--accent); font-weight: 500; letter-spacing: 1.8px; font-size: 10px; }
+.page-top { padding: 6px 0 35px; gap: 35px; }
+.lede { color: var(--muted); font-size: 14px; line-height: 1.9; }
+
+/* A simple ceramic-inspired mark replaces the illustrated food arrangement. */
+.plate-art { background: var(--soft); width: 208px; height: 208px; flex-basis: 208px; margin-right: 8px; }
+.plate-ring { inset: 16px; border: 1px solid #d1b8a7; box-shadow: inset 0 0 0 13px #f2e7de; }
+.plate-art .leaf, .plate-art .tomato, .plate-art .grain { display: none; }
+.plate-caption { width: 100%; left: 0; top: 44%; bottom: auto; text-align: center; transform: rotate(-8deg); font-family: Georgia, serif; font-size: 18px; color: var(--accent); }
+
+.section-heading { margin-top: 25px; margin-bottom: 18px; }
+.section-heading h2 { font-size: 15px; font-weight: 600; letter-spacing: 0; }
+.journey-row { padding: 24px 8px; gap: 18px; }
+.journey-row:hover { background: var(--hover); }
+.step { color: var(--accent); font-size: 22px; }
+.journey-row strong { font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif; font-size: 20px; font-weight: 400; line-height: 1.3; letter-spacing: -.3px; }
+.journey-row small { font-size: 12px; margin-top: 7px; }
+.row-tag { color: var(--muted); border-color: var(--line); background: var(--white); font-size: 10px; padding: 5px 11px; }
+.overview-bottom { gap: 60px; margin-top: 36px; }
+.concept h2 { font-size: 29px; }
+.concept p:not(.eyebrow) { color: var(--muted); line-height: 1.9; }
+.concept[aria-label='Project contributors'] p:not(.eyebrow) { font-family: 'Palatino Linotype', Georgia, serif; font-size: 19px; color: var(--ink); line-height: 1.9; }
+.text-button { min-height: 44px; color: var(--accent); }
+.concept .text-button { font-weight: 500; }
+.footer { margin-top: 35px; font-size: 11px; }
+.footer .text-button { font-size: 11px; }
+
+.panel { background: var(--white); border-color: var(--line); padding: 32px; box-shadow: 0 4px 20px #493d3603; }
+label, legend { font-weight: 500; color: var(--ink); }
+input, textarea, select { background: var(--white); border-color: var(--field-border); border-radius: 10px; padding: 13px 15px; }
+input::placeholder, textarea::placeholder { color: var(--muted); }
+input[type='file'] { color: var(--muted); }
+input[type='file']::file-selector-button { background: var(--sage); color: var(--ink); border: 1px solid var(--field-border); padding: 7px 10px; border-radius: 20px; font: inherit; cursor: pointer; margin-right: 10px; }
+.primary, .secondary { border-radius: 30px; padding: 12px 21px; min-height: 46px; font-weight: 500; }
+.primary { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.primary:hover { background: #655148; border-color: #655148; }
+.secondary { border-color: var(--field-border); color: var(--ink); background: transparent; }
+.secondary:hover { background: var(--sage); }
+.form-footer { padding-top: 24px; }
+.safety { color: #775448; }
+.mood-options { gap: 12px; }
+.mood-options span { border-radius: 30px; border-color: var(--field-border); padding: 12px 20px; font-weight: 400; }
+.mood-options span:hover { background: var(--hover); }
+.mood-options input:checked + span { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.upload-zone { background: #faf4ef; border-color: var(--field-border); border-radius: 14px; padding: 30px; }
+.upload-zone:hover { background: var(--hover); }
+.upload-zone strong { font-weight: 500; }
+.outline-label { color: var(--muted); border-color: var(--field-border); border-radius: 20px; letter-spacing: 1px; font-size: 10px; padding: 4px 10px; }
+.notice { background: #f5ede7; border-radius: 12px; padding: 20px; }
+.notice strong { font-weight: 600; }
+.brief-copy p { color: var(--muted); line-height: 1.9; }
+#toast { background: var(--ink); color: var(--white); border-radius: 14px; box-shadow: 0 8px 25px #493d3618; }
+#meal-photo-preview, .review-photo { border-radius: 14px; }
+
+@media (min-width: 1500px) {
+  main { padding-top: 58px; }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  main { padding: 38px 28px 20px; }
+  .brand { font-size: 27px; gap: 8px; }
+  .brand small { font-size: 7px; }
+  .plate-art { width: 155px; height: 155px; flex-basis: 155px; transform: none; margin-right: 0; }
+  .plate-ring { inset: 11px; box-shadow: inset 0 0 0 9px #f2e7de; }
+  .plate-caption { font-size: 14px; }
+  .page-top { gap: 15px; }
+  .overview-bottom { gap: 25px; }
+}
+@media (max-width: 760px) {
+  .sidebar { padding: 23px 20px 15px; }
+  .brand { margin-bottom: 20px; font-size: 30px; }
+  .brand-mark { min-width: 38px; height: 38px; font-size: 31px; }
+  .brand small { font-size: 8px; }
+  .nav-item { min-height: 44px; margin-bottom: 0; padding: 9px 12px; font-size: 12px; }
+  .topbar { height: auto; min-height: 62px; }
+  main { padding: 30px 22px 18px; }
+  .page-top { padding: 4px 0 27px; }
+  .page-top h1 { font-size: 39px; letter-spacing: -1.4px; }
+  .eyebrow { font-size: 9px; letter-spacing: 1.1px; }
+  .plate-art { display: none; }
+  .lede { font-size: 13px; }
+  .journey-row { padding: 23px 0; gap: 10px; }
+  .journey-row strong { font-size: 19px; }
+  .journey-row small { font-size: 12px; }
+  .overview-bottom { gap: 26px; margin-top: 30px; }
+  .concept h2 { font-size: 28px; }
+  .panel { padding: 24px 18px; border-radius: 15px; }
+  .mood-options { gap: 9px; }
+  .mood-options span { padding: 12px 16px; }
+  .footer { align-items: flex-start; flex-wrap: wrap; gap: 4px; }
+  .footer > span, .footer .text-button { font-size: 10px; }
+  .footer > span { padding-top: 10px; }
+}
