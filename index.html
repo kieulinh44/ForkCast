@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="styles.css">
 <script src="state.js" defer>
 </script>
+<script src="server-state.js" defer></script>
 <script src="app.js" defer>
 </script>
 </head>
@@ -46,6 +47,7 @@
 </span>UI preview · No AI connected</span>
 </div>
 <main id="main" tabindex="-1">
+<aside id="storage-banner" class="notice migration-notice" role="status" hidden><strong>A browser-only draft is available.</strong><p>It has not been sent to the server. Importing it will replace the saved data for this guest browser.</p><div class="empty-actions"><button class="secondary" id="import-local" type="button">Import browser-only draft</button><button class="text-button" id="dismiss-import" type="button">Not now</button></div></aside>
 <section id="view-overview" class="view" aria-labelledby="overview-title">
 <div class="hero">
 <div class="hero-copy">
@@ -123,7 +125,7 @@
 <section id="view-profile" class="view" hidden aria-labelledby="profile-title">
 <p class="eyebrow">YOUR USUALS, YOUR NON-NEGOTIABLES</p>
 <h1 id="profile-title">Your food preferences.</h1>
-<p class="lede">Save your dietary needs, food preferences, and budget here. These are separate from what you’re craving today. Use sample details in this browser-local preview.</p>
+<p class="lede">Save your dietary needs, food preferences, and budget here. These are separate from what you’re craving today. Use sample details during testing.</p>
 <form id="profile-form" class="panel form-grid">
 <label>Display name<input name="name" maxlength="80" placeholder="What should we call you?">
 </label>
@@ -416,18 +418,20 @@
 <h2>Professor's feedback</h2>
 <p>Professor Dobolyi supported the concept and suggested allowing restaurant website or direct menu links in addition to photos. He asked us to decide on the API endpoints before getting too far into development.</p>
 <h2>The build, so far</h2>
-<p>This responsive interface uses HTML, CSS, and JavaScript. Python and SQLite are proposed for the future backend. Hermes and Codex are the proposed AI coding tools; GitHub supports version control, documentation, and collaboration. The planned class services are DeepSeek for recommendations and feedback interpretation, and Qwen for menu-photo understanding. They are not connected in this UI preview.</p>
+<p>This responsive interface uses HTML, CSS, and JavaScript. Its Python and SQLite backend supports isolated guest storage when the app server is running; a separate browser-only preview is also available. Hermes and Codex are the proposed AI coding tools; GitHub supports version control, documentation, and collaboration. The planned class services are DeepSeek for recommendations and feedback interpretation, and Qwen for menu-photo understanding. Server-side endpoint configuration and checks are available. Menu analysis, recommendations, and learning are not connected yet.</p>
 <h2>Our team</h2>
 <p>Linh · Jamie · Jana · Kelly · Mirina</p>
 <p class="muted">Source: our ForkCast project proposal and the professor's feedback. This is a UI preview, not the finished recommendation system.</p>
 </article>
 </section>
+<section id="view-system" class="view" hidden aria-labelledby="system-title"><p class="eyebrow">STEP 1 / BACKEND FOUNDATION</p><h1 id="system-title">Connection &amp; storage</h1><p class="lede">Check where your data is saved and whether the app server is ready. This is not a live AI availability check.</p><div class="panel"><h2>Current connection</h2><dl class="system-status-list"><div><dt>App server</dt><dd id="server-health">Checking…</dd></div><div><dt>SQLite database</dt><dd id="database-health">Checking…</dd></div><div><dt>Text service</dt><dd id="text-health">Not checked</dd></div><div><dt>Vision service</dt><dd id="vision-health">Not checked</dd></div><div><dt>AI features</dt><dd>Menu reading, recommendations, and preference learning are not connected.</dd></div></dl><button class="secondary" id="refresh-status" type="button">Refresh connection status</button><p id="connection-message" class="muted" role="status"></p></div><div class="info-row"><h2>Your guest workspace</h2><p id="guest-storage-description">Saved data is isolated to this guest browser. There are no accounts or cross-device syncing yet.</p><p>In server mode, clearing browser cookies creates a new guest workspace; it does not erase the old server record. Use Clear saved data before clearing cookies if you want to remove your saved details.</p><h2>Deployment &amp; course services</h2><p>This project is not deployed yet. Configuration is not proof that a service can be reached. Run the documented server-side endpoint check locally and again from the chosen deployment host.</p><p class="safety">The saved class services use unencrypted HTTP. Use sample data during testing. This screen makes no AI calls and sends no menu photos or dietary details to a model.</p></div></section>
 <footer class="footer">
 <div>
 <a class="footer-brand" href="#overview">ForkCast</a>
 <span>Your table. Your taste.</span>
 </div>
 <nav aria-label="More about ForkCast">
+<button class="text-button" data-view="system">System status</button>
 <button class="text-button" data-view="preferences">Learned preferences</button>
 <button class="text-button" data-view="brief">Project brief</button>
 <button type="button" id="clear-data" class="text-button">Clear local drafts</button>

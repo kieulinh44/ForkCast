@@ -4,9 +4,12 @@
   "private": true,
   "description": "ForkCast starter dashboard — MBAX 6418 group final project",
   "scripts": {
-    "start": "python -m http.server 8014 --bind 127.0.0.1",
-    "test": "node --test tests/state.test.cjs",
-    "test:ui": "playwright test"
+    "start": "python -m uvicorn backend.main:app --host 127.0.0.1 --port 8014",
+    "start:preview": "python scripts/preview.py --port 18014",
+    "test": "node --test tests/*.test.cjs",
+    "test:backend": "python -m pytest",
+    "test:ui": "playwright test",
+    "test:live": "playwright test --config playwright.live.config.cjs"
   },
   "devDependencies": {
     "@playwright/test": "1.65.1"

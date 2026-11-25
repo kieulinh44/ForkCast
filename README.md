@@ -1,72 +1,100 @@
 # ForkCast
 
-**Your table, your taste.** An AI-powered restaurant menu assistant proposed for the MBAX 6418 group final project.
+**Your table, your taste.** A restaurant-menu assistant for the MBAX 6418 group final project.
 
 **Contributors:** Linh · Jamie · Jana · Kelly · Mirina
 
-## Our proposal
+## What the app does
 
-Choosing what to order can be overwhelming, particularly when dishes and ingredients are unfamiliar. Dietary restrictions, allergies, religious dietary requirements, food preferences, budgets, and cravings can make the choice harder.
+The intended flow is **Cravings → Restaurant menu → Dish recommendations**. Tell ForkCast what you want to eat, provide the restaurant's menu, and eventually receive suggestions based on that menu, your preferences, dietary requirements, and budget. Taste profile and Meal history are supporting destinations.
 
-ForkCast aims to recommend dishes from a restaurant's available menu based on an individual's preferences. Our proposed features are a personalized taste profile, menu-photo recognition, mood-based recommendations, dish ratings and feedback to improve future recommendations, and a mobile-friendly interface. Professor Dobolyi also suggested accepting online menu links.
+## Current checkpoint: step 1 only
 
-## Current interface — Corner Diner
+**Working:** the Corner Diner responsive UI, Python API, SQLite guest workspaces, profile/craving/link/review persistence, resized meal-review photos, clear-saved-data, conflict detection, and a System status screen. Separate guest cookies isolate browsers; there are no accounts or cross-device sync yet. Old browser-only drafts are imported only after an explicit confirmation.
 
-- Responsive Corner Diner theme: cream, navy, paprika, an upright rounded wordmark, shared components and mobile navigation.
-- Clear craving-first flow: choose a craving → add the restaurant menu → review dish recommendations. Home explains the app; taste profile and meal history are secondary.
-- Shared workflow steps and a save-and-continue action guide navigation. The project brief and team credits stay secondary.
-- Dish recommendations and Learned preferences sections with honest empty states. Neither AI feature is connected yet.
-- Taste-profile form covering preferences, dietary needs, allergies, spice tolerance, and budget.
-- Local menu-photo preview with file-type and size validation.
-- Menu-link entry, validation, local saving, opening, and removal.
-- Mood/craving selection and meal-feedback forms.
-- Optional meal photo from camera or gallery, with preview/removal and browser-local saving alongside the review. JPEG, PNG, and WebP inputs up to 10 MB are resized to at most 1280 pixels on the longest edge and re-encoded as JPEG. HEIC must be converted first. Camera capture depends on the phone/browser and has not been verified on physical phones yet.
-- Browser-local persistence and a confirmed clear-drafts action.
+**Not implemented:** menu-photo extraction, restaurant website/PDF import or menu discovery, dish recommendations, preference learning, and accounts. Their UI sections are intentionally honest empty states. Menu photos preview locally and are not retained; menu links save without fetching websites.
 
-**This is a frontend foundation, not the finished AI application.** It does not fetch restaurant websites, recognize menu text, generate recommendations, or learn preferences. The planned class endpoints are DeepSeek for text/reasoning and Qwen for menu-photo understanding, but neither is connected yet. No connection credentials or real endpoint URLs are stored in the UI. Python and SQLite are proposed for a future backend; no database or authentication is implemented yet.
+The existing class **DeepSeek text** and **Qwen vision** services are configured server-side and have passed synthetic local inference checks. They are not yet wired into dining features. Availability can change; use the on-demand checker below. A configured status is not a live service check. The class services use unencrypted HTTP: use sample data, never sensitive dietary details or private photos.
 
-## Run locally
+## Run the actual app locally
 
-The dashboard has no runtime JavaScript dependencies. With Python 3 installed, run this from the repository root:
+Use Python 3.11+ (verified with 3.12) and `uv`, from the repository root:
 
 ```sh
-python -m http.server 8014 --bind 127.0.0.1
+uv venv --python 3.12 .venv
+uv pip sync requirements-dev.txt
 ```
 
-Open `http://127.0.0.1:8014` in a browser. Stop the server with Ctrl+C. This is a local development server, not a production deployment.
+If you do not already have `.env`, copy `.env.example` to `.env` and fill the course credentials privately. **Do not overwrite an existing `.env`.** Empty service credentials do not prevent storage/the website from running; System status will show them as not configured. The app reads `.env` itself; no Hermes installation or shell sourcing is required.
+
+```sh
+.venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8014 --workers 1 --no-access-log
+```
+
+Open `http://127.0.0.1:8014`. The server creates `data/forkcast.sqlite3`. Stop with Ctrl+C in its terminal. Keep the database and the same browser/hostname to retain the same guest data across restarts.
+
+On Windows use `.venv\Scripts\python.exe` in place of `.venv/bin/python`. `npm start` is an alternative after activating the Python environment. This is local development, not a public production deployment.
+
+**Do not use `python -m http.server` from the repository root:** it can expose `.env` and the database. For a UI-only preview with no backend, use the restricted server:
+
+```sh
+python scripts/preview.py --port 18014
+```
+
+That separate preview explicitly uses browser-only storage. It never silently replaces a failed server save with a local save.
+
+## Check the class services
+
+Run only when you intend to make the small synthetic API requests:
+
+```sh
+.venv/bin/python -m backend.check_endpoints
+```
+
+It verifies the configured models are listed and obtains complete final answers from a harmless text prompt and a generated colored square. It prints a sanitized report and exits nonzero on failure. It does not send profiles, menus, meal photos or credentials to the browser. **System status → Refresh connection status** checks the app/database and configuration presence without calling either model.
 
 ## Tests
 
-Install Node.js 22+ and Google Chrome, then run:
+Install Node.js 22+ and Google Chrome for browser tests:
 
 ```sh
 npm ci
 npm test
 npm run test:ui
+.venv/bin/python -m pytest tests/backend -q
+# With the real backend running on port 8014:
+npm run test:live
 ```
 
-The browser tests use installed Chrome and start a local Python server if port 8014 is not already serving the dashboard. Coverage includes all eight views at 320/390/768/1440px, mobile-menu interaction, palette contrast checks, navigation, local persistence, draft clearing, safe text rendering, photo validation, menu-link validation, honest empty states, and unavailable/corrupt browser storage. This is not a full accessibility or physical-device audit.
+`test:ui` starts an isolated restricted browser-only preview on port 18014 and uses simulated API responses only for transport/UI failure tests. It does not touch the live guest workspace or call AI services. `test:live` exercises the real API and database with independent sample guests, then clears their saved state. Backend tests use temporary databases and simulated upstream responses, not live AI calls. One test-only Starlette/HTTPX deprecation warning is documented in the backend guide.
+
+Coverage includes all nine views at 320/390/768/1440px, keyboard/mobile navigation, contrast checks, safe text rendering, photo validation, guest persistence/isolation, failed saves/imports/clears, stale revisions, CSRF/origin checks, body limits, and private-file denial. This is not a full accessibility, physical-device or Safari audit.
+
+## Manual acceptance checklist
+
+Use [the step-1 checklist](docs/step-1-manual-tests.md) before moving to menu extraction. It lists exact actions and expected outcomes, including refresh/restart persistence, private-browser isolation, failed saves, two-tab conflicts, and data clearing.
 
 ## Where to edit
 
 | File | Purpose |
 | --- | --- |
-| `index.html` | Dashboard sections, proposal text, forms, and credits |
-| `styles.css` | Single Corner Diner token system, component styling and responsive layout |
-| `assets/` | Local decorative SVG artwork and favicon; no external asset requests |
-| `docs/ui-design.md` | Design tokens, typography, components, breakpoints, mobile-preview guidance and feature boundaries |
-| `app.js` | Navigation and user interactions |
-| `state.js` | Browser-local draft loading and saving |
-| `tests/` | State and browser regression tests |
+| `index.html`, `styles.css`, `assets/` | Shared Corner Diner UI, design tokens, responsive components, local decorative SVGs |
+| `app.js` | Navigation, forms, persistence flow, legacy-import consent and connection status |
+| `server-state.js` | Same-origin revision-aware API transport and safe failure handling |
+| `state.js` | Legacy/browser-only draft helpers |
+| `backend/` | Python API, SQLite storage, configuration, validation and endpoint diagnostics |
+| `docs/ui-design.md` | Recreating the theme and navigation conventions |
+| `docs/backend.md` | API/configuration, setup, security limits and deployment preparation |
+| `tests/`, `tests/backend/`, `tests/live/` | Unit, browser, API and live integration tests |
 
-Make changes on personal/feature branches, run the tests, then open a pull request into `main`. Keep main stable and do not commit credentials, local drafts, or installed dependencies. Hermes and Codex are the proposed AI coding tools; GitHub is used for version control and collaboration.
+Make feature changes on personal branches, test, then open a pull request into `main`. Do not commit credentials, user data, test outputs, databases or installed dependencies. Hermes and Codex are coding tools; GitHub supports version control and collaboration.
 
-See [the UI design guide](docs/ui-design.md) to recreate the theme, understand the shared components, or preview on a phone over a trusted private network. The default server remains bound to localhost. Physical-device camera and Safari behaviour have not been verified.
+## Privacy, storage and deployment limits
 
-## Privacy and limitations
-
-Profiles, cravings, feedback, and saved menu links belong only to the current browser and origin; they are not shared between teammates or devices. Use sample information for testing. Menu photos are previewed locally and are not retained after refreshing. The app sends no photos or profile details to an AI service. Opening a saved link visits the restaurant's website in a separate tab.
-
-Meal-review photos (unlike menu previews) are kept with saved feedback in browser storage. They are not uploaded or committed to GitHub. Clearing local drafts or site data removes them. Storage is limited: if saving fails, the form and photo remain on screen so you can retry or remove the photo; no success message is shown. Unsaved forms are lost on refresh. This is not a durable photo backup or a shared gallery.
-
-ForkCast cannot establish whether food is safe for someone with allergies or confirm ingredients, religious compliance, or cross-contact. Always verify these with restaurant staff.
+- In **server mode**, profiles, cravings, saved links, reviews and resized meal-review photos are stored in SQLite for this guest browser. They are not synced to other devices and are not sent to an AI service by the dining UI in step 1. Original photo metadata is discarded by browser re-encoding.
+- In **browser-only preview**, saved data stays in browser storage. Existing browser-only data never auto-uploads. An explicit import replaces this guest's server state, rather than merging it.
+- Guest cookies are bearer credentials, not accounts. The local cookie is HttpOnly/SameSite Strict and persists for up to 30 days. Clearing cookies starts another guest; it does not erase the old database record. Use Clear saved data first if deletion is intended. There is no account recovery yet.
+- SQLite and backups are not encrypted at rest. Keep the database private. `.env` and database files are ignored by Git and cannot be downloaded through the app's static routes. Unsaved forms may be lost on refresh; failure messages keep them on screen for retry.
+- A menu-photo preview is not a persisted meal-review photo. No menus are analyzed, links fetched, or food-safety guarantees made at this checkpoint. Verify ingredients, religious compliance and cross-contact with restaurant staff.
+- Docker/deployment configuration is prepared, **not deployed**. No host has been selected, actual deployed-host connectivity is unverified, and Docker could not be built/run here because Docker is not installed. A public host needs persistent storage, HTTPS, secure cookies, explicit allowed hosts, service access and further abuse/identity controls; see the backend guide.
+- Physical-phone camera and Safari checks remain outstanding. Trusted-LAN setup is separate from localhost; do not expose the development server automatically.

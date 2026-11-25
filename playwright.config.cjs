@@ -1,8 +1,10 @@
 const { defineConfig } = require('@playwright/test');
+const port = process.env.FORKCAST_TEST_PORT || '18014';
+const baseURL = `http://127.0.0.1:${port}`;
 module.exports = defineConfig({
   testDir: './tests', testMatch: '*.spec.cjs',
-  // Parallel Chrome starts can exceed the local Python server's connection queue.
   workers: 1,
-  use: { baseURL: 'http://127.0.0.1:8014', channel: 'chrome' },
-  webServer: { command: 'python -m http.server 8014 --bind 127.0.0.1', url: 'http://127.0.0.1:8014', reuseExistingServer: !process.env.CI },
+  use: { baseURL, channel: 'chrome' },
+  // Isolated restricted preview: never share the user's live backend or expose .env/data.
+  webServer: { command: `python scripts/preview.py --port ${port}`, url: baseURL, reuseExistingServer: !process.env.CI },
 });

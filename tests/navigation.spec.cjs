@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 test('Home breadcrumb returns to Home from every tab with mouse and keyboard', async ({ page }) => {
-  for (const view of ['brief', 'profile', 'menu', 'mood', 'picks', 'feedback', 'preferences']) {
+  for (const view of ['brief', 'profile', 'menu', 'mood', 'picks', 'feedback', 'preferences', 'system']) {
     await page.goto(`/#${view}`);
     const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb', exact: true });
     const workspace = breadcrumb.getByRole('link', { name: 'Home', exact: true });

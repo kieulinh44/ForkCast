@@ -1,0 +1,17 @@
+**
+!requirements.txt
+!backend/
+!backend/*.py
+!index.html
+!app.js
+!state.js
+!styles.css
+!server-state.js
+!assets/
+!assets/*.svg
+!Dockerfile
+!.dockerignore
+.env
+.env.*
+**/__pycache__
+**/*.pyc

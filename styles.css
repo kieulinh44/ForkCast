@@ -209,3 +209,11 @@ legend { font-size: 14px; font-weight: 700; padding: 0; margin-bottom: 12px; }
 .stage-actions p { font-size: 12px; margin: 0; max-width: 390px; }
 @media (min-width: 641px) and (max-width: 1000px) { .main-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); } .main-nav .nav-secondary[data-view="profile"] { margin-left: 0; } }
 @media (max-width: 640px) { .main-nav .nav-secondary[data-view="profile"] { margin-left: 0; } .main-nav .nav-secondary { border-top: 1px solid var(--line); } .flow-steps { gap: 6px; } .flow-steps a { flex-direction: column; align-items: flex-start; padding: 10px 9px; font-size: 11px; min-height: 105px; line-height: 1.4; } .flow-progress { margin-bottom: 23px; } .stage-actions { align-items: stretch; flex-direction: column; } .stage-actions .primary { align-self: flex-start; } }
+
+.system-status-list { margin: 0 0 22px; }
+.system-status-list > div { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 18px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.system-status-list dt { font-weight: 700; }
+.system-status-list dd { margin: 0; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+#connection-message { margin: 16px 0 0; font-size: 13px; }
+#storage-banner { margin: 0 0 25px; border: 1px solid var(--field-border); }
+@media (max-width: 640px) { .system-status-list > div { grid-template-columns: 1fr; gap: 5px; } }
