@@ -1,10 +1,28 @@
 /* Navigation is deliberately independent of future AI/backend integrations. */
 'use strict';
-const viewNames = { overview: 'Overview', profile: 'Taste profile', menu: 'My menu', mood: 'Mood & cravings', feedback: 'Meal feedback', brief: 'Project brief' };
+document.documentElement.classList.add('js');
+const navToggle = document.getElementById('nav-toggle');
+const mainNav = document.getElementById('main-nav');
+function closeNavigation() {
+  mainNav.classList.remove('is-open');
+  navToggle.setAttribute('aria-expanded', 'false');
+}
+navToggle.addEventListener('click', () => {
+  const open = navToggle.getAttribute('aria-expanded') !== 'true';
+  mainNav.classList.toggle('is-open', open);
+  navToggle.setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && navToggle.getAttribute('aria-expanded') === 'true') {
+    closeNavigation();
+    navToggle.focus();
+  }
+});
+const viewNames = { overview: 'Home', profile: 'Taste profile', menu: 'Restaurant menu', mood: 'Cravings', picks: 'Dish recommendations', feedback: 'Meal history', preferences: 'Learned preferences', brief: 'Project brief' };
 function showView(name, focus = false) {
   const view = Object.hasOwn(viewNames, name) ? name : 'overview';
   document.querySelectorAll('.view').forEach(section => { section.hidden = section.id !== `view-${view}`; });
-  document.querySelectorAll('.nav-item').forEach(button => {
+  document.querySelectorAll('.nav-item, .footer [data-view]').forEach(button => {
     const active = button.dataset.view === view;
     button.classList.toggle('active', active);
     if (active) button.setAttribute('aria-current', 'page');
@@ -12,6 +30,7 @@ function showView(name, focus = false) {
   });
   document.getElementById('breadcrumb').textContent = viewNames[view];
   document.title = `ForkCast · ${viewNames[view]}`;
+  closeNavigation();
   if (focus) document.getElementById('main').focus();
 }
 document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => {
@@ -26,6 +45,9 @@ showView(location.hash.slice(1));
 let storage;
 try { storage = window.localStorage; } catch { storage = null; }
 let draft = ForkCastState.load(storage);
+let savedProfile = JSON.stringify(draft.profile);
+let savedMenuUrl = draft.menuUrl;
+let savedMood = JSON.stringify([draft.mood, draft.craving]);
 let mealPhoto = '';
 let mealPhotoVersion = 0;
 let mealPhotoProcessing = false;
@@ -37,14 +59,32 @@ function notify(message) {
   toast.hidden = false;
   toastTimer = setTimeout(() => { toast.hidden = true; }, 5000);
 }
+function saveDraft(state) {
+  const saved = ForkCastState.save(storage, state);
+  if (saved) {
+    savedProfile = JSON.stringify(state.profile);
+    savedMenuUrl = state.menuUrl;
+    savedMood = JSON.stringify([state.mood, state.craving]);
+  }
+  renderSummary();
+  return saved;
+}
 function persist(message) {
-  const saved = ForkCastState.save(storage, draft);
+  const saved = saveDraft(draft);
   notify(saved ? message : 'Browser storage is unavailable. Changes last only until you close or refresh this page.');
   renderSummary();
+  return saved;
 }
 function renderSummary() {
-  document.getElementById('profile-status').textContent = Object.values(draft.profile).some(Boolean) ? 'Profile saved' : 'Set up your profile';
-  document.getElementById('mood-status').textContent = draft.mood || (draft.craving ? 'Craving saved' : 'Pick your mood');
+  const hasProfile = Object.values(draft.profile).some(Boolean);
+  const profileStatus = savedProfile === JSON.stringify(draft.profile) ? 'Profile saved' : 'Profile not saved';
+  document.getElementById('profile-status').textContent = hasProfile ? profileStatus : 'Set up your profile';
+  const moodPersisted = savedMood === JSON.stringify([draft.mood, draft.craving]);
+  const moodStatus = moodPersisted ? (draft.mood || 'Craving saved') : 'Craving not saved';
+  document.getElementById('mood-status').textContent = draft.mood || draft.craving ? moodStatus : 'Choose a craving';
+  const hasPhoto = !document.getElementById('menu-preview').hidden;
+  const linkStatus = savedMenuUrl === draft.menuUrl ? 'Link saved · not read' : 'Link not saved · not read';
+  document.getElementById('menu-status').textContent = hasPhoto ? 'Photo preview · not read' : (validMenuUrl(draft.menuUrl) ? linkStatus : 'Add a restaurant menu');
 }
 function renderFeedback() {
   const list = document.getElementById('feedback-list');
@@ -103,7 +143,7 @@ document.getElementById('mood-form').addEventListener('submit', event => {
   draft.mood = form.get('mood') || '';
   draft.craving = form.get('craving').trim();
   if (!draft.mood && !draft.craving) return notify('Choose a mood or describe a craving first.');
-  persist('Mood and craving saved on this browser.');
+  if (persist('Mood and craving saved on this browser.')) location.hash = 'menu';
 });
 document.getElementById('feedback-form').addEventListener('submit', event => {
   event.preventDefault();
@@ -115,7 +155,7 @@ document.getElementById('feedback-form').addEventListener('submit', event => {
   const entry = { dish, rating, notes: data.get('notes').trim() };
   if (mealPhoto) entry.photo = mealPhoto;
   const next = { ...draft, feedback: [entry, ...draft.feedback] };
-  if (!ForkCastState.save(storage, next)) {
+  if (!saveDraft(next)) {
     notify('Review not saved: browser storage is full or unavailable. Your draft is still here. Remove the photo and retry, or free browser storage.');
     return;
   }
@@ -132,6 +172,9 @@ document.getElementById('clear-data').addEventListener('click', () => {
   catch { notify('Drafts cleared from this page, but browser storage is unavailable.'); }
   document.getElementById('feedback-form').reset();
   resetMealPhoto();
+  clearPhoto();
+  menuFile.value = '';
+  menuMessage.textContent = '';
   restoreForms();
 });
 restoreForms();
@@ -149,6 +192,7 @@ function clearPhoto() {
   removePhoto.hidden = true;
   if (imageUrl) URL.revokeObjectURL(imageUrl);
   imageUrl = null;
+  renderSummary();
 }
 menuFile.addEventListener('change', () => {
   clearPhoto();
@@ -170,6 +214,7 @@ menuFile.addEventListener('change', () => {
     menuPreview.hidden = false;
     removePhoto.hidden = false;
     menuMessage.textContent = `${file.name} · Preview only. No AI analysis has been run.`;
+    renderSummary();
   };
   menuPreview.onerror = () => {
     clearPhoto();
@@ -214,13 +259,13 @@ document.getElementById('menu-link-form').addEventListener('submit', event => {
     return;
   }
   draft.menuUrl = url;
-  const saved = ForkCastState.save(storage, draft);
+  const saved = saveDraft(draft);
   renderMenuLink();
   if (!saved) document.getElementById('menu-link-message').textContent = 'Browser storage is unavailable. This link will be lost on refresh.';
 });
 document.getElementById('remove-menu-link').addEventListener('click', () => {
   draft.menuUrl = '';
-  const saved = ForkCastState.save(storage, draft);
+  const saved = saveDraft(draft);
   renderMenuLink();
   document.getElementById('menu-link-message').textContent = saved ? 'Saved link removed.' : 'Link removed from this page, but browser storage is unavailable.';
   document.getElementById('menu-url').focus();

@@ -10,9 +10,12 @@ Choosing what to order can be overwhelming, particularly when dishes and ingredi
 
 ForkCast aims to recommend dishes from a restaurant's available menu based on an individual's preferences. Our proposed features are a personalized taste profile, menu-photo recognition, mood-based recommendations, dish ratings and feedback to improve future recommendations, and a mobile-friendly interface. Professor Dobolyi also suggested accepting online menu links.
 
-## Current dashboard
+## Current interface — Corner Diner
 
-- Responsive overview with the proposal description, project brief, and team credits.
+- Responsive Corner Diner theme: cream, navy, paprika, an upright rounded wordmark, shared components and mobile navigation.
+- Clear craving-first flow: choose a craving → add the restaurant menu → review dish recommendations. Home explains the app; taste profile and meal history are secondary.
+- Shared workflow steps and a save-and-continue action guide navigation. The project brief and team credits stay secondary.
+- Dish recommendations and Learned preferences sections with honest empty states. Neither AI feature is connected yet.
 - Taste-profile form covering preferences, dietary needs, allergies, spice tolerance, and budget.
 - Local menu-photo preview with file-type and size validation.
 - Menu-link entry, validation, local saving, opening, and removal.
@@ -20,7 +23,7 @@ ForkCast aims to recommend dishes from a restaurant's available menu based on an
 - Optional meal photo from camera or gallery, with preview/removal and browser-local saving alongside the review. JPEG, PNG, and WebP inputs up to 10 MB are resized to at most 1280 pixels on the longest edge and re-encoded as JPEG. HEIC must be converted first. Camera capture depends on the phone/browser and has not been verified on physical phones yet.
 - Browser-local persistence and a confirmed clear-drafts action.
 
-**This is a frontend foundation, not the finished AI application.** It does not fetch restaurant websites, recognize menu text, generate recommendations, or learn preferences. AI models and API endpoints have not been selected. Python and SQLite are proposed for a future backend; no database or authentication is implemented yet.
+**This is a frontend foundation, not the finished AI application.** It does not fetch restaurant websites, recognize menu text, generate recommendations, or learn preferences. The planned class endpoints are DeepSeek for text/reasoning and Qwen for menu-photo understanding, but neither is connected yet. No connection credentials or real endpoint URLs are stored in the UI. Python and SQLite are proposed for a future backend; no database or authentication is implemented yet.
 
 ## Run locally
 
@@ -42,22 +45,23 @@ npm test
 npm run test:ui
 ```
 
-The browser tests use installed Chrome and start a local Python server if port 8014 is not already serving the dashboard. Coverage includes navigation, mobile layout, local persistence, draft clearing, safe text rendering, photo validation, menu-link validation, and unavailable/corrupt browser storage.
+The browser tests use installed Chrome and start a local Python server if port 8014 is not already serving the dashboard. Coverage includes all eight views at 320/390/768/1440px, mobile-menu interaction, palette contrast checks, navigation, local persistence, draft clearing, safe text rendering, photo validation, menu-link validation, honest empty states, and unavailable/corrupt browser storage. This is not a full accessibility or physical-device audit.
 
 ## Where to edit
 
 | File | Purpose |
 | --- | --- |
 | `index.html` | Dashboard sections, proposal text, forms, and credits |
-| `styles.css` | Main theme and responsive layout |
-| `clean-girl.css` | Warm ivory, blush, and taupe styling; typography and component refinements |
-| `menu-links.css` | Menu-link control styling |
-| `meal-photos.css` | Optional meal-photo controls and previews |
+| `styles.css` | Single Corner Diner token system, component styling and responsive layout |
+| `assets/` | Local decorative SVG artwork and favicon; no external asset requests |
+| `docs/ui-design.md` | Design tokens, typography, components, breakpoints, mobile-preview guidance and feature boundaries |
 | `app.js` | Navigation and user interactions |
 | `state.js` | Browser-local draft loading and saving |
 | `tests/` | State and browser regression tests |
 
 Make changes on personal/feature branches, run the tests, then open a pull request into `main`. Keep main stable and do not commit credentials, local drafts, or installed dependencies. Hermes and Codex are the proposed AI coding tools; GitHub is used for version control and collaboration.
+
+See [the UI design guide](docs/ui-design.md) to recreate the theme, understand the shared components, or preview on a phone over a trusted private network. The default server remains bound to localhost. Physical-device camera and Safari behaviour have not been verified.
 
 ## Privacy and limitations
 
