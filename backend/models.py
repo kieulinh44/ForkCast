@@ -46,6 +46,8 @@ class State(StrictModel):
     craving: Text
     feedback: Annotated[list[Feedback], Field(max_length=100)]
     menuUrl: Annotated[str, Field(max_length=2048)]
+    # Optional for compatibility with existing single-link workspaces and clients.
+    menuUrls: Annotated[list[Annotated[str, Field(max_length=2048)]], Field(max_length=50)] = Field(default_factory=list)
 
     @field_validator('profile')
     @classmethod
@@ -68,6 +70,17 @@ class State(StrictModel):
             _ = url.port
         except ValueError:
             raise ValueError('Invalid URL') from None
+        return value
+
+    @field_validator('menuUrls')
+    @classmethod
+    def valid_menu_urls(cls, value):
+        for url in value:
+            if not url:
+                raise ValueError('Menu links must not be empty')
+            cls.valid_url(url)
+        if len(set(value)) != len(value):
+            raise ValueError('Duplicate menu links')
         return value
 
 class PutState(StrictModel):

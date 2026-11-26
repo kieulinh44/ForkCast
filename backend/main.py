@@ -104,7 +104,7 @@ def create_app(settings=None):
         return await run_in_threadpool(recommend, settings, request.cookies.get('forkcast_guest'), body, getattr(app.state, 'model_transport', None))
 
     static_names = {'index.html', 'app.js', 'state.js', 'styles.css', 'server-state.js', 'system-status.js', 'menu-flow.js'}
-    asset_names = {str(p.relative_to(ROOT)) for p in (ROOT / 'assets').glob('*.svg') if p.is_file() and not p.is_symlink()}
+    asset_names = {p.relative_to(ROOT).as_posix() for p in (ROOT / 'assets').glob('*.svg') if p.is_file() and not p.is_symlink()}
 
     @app.api_route('/{path:path}', methods=['GET', 'HEAD'])
     def static_file(path: str):

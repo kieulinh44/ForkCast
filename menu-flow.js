@@ -20,7 +20,8 @@
     const available = app.mode === 'server' && app.ready && loaded;
     if (available) {
       const count = envelope.menu?.items.length || 0;
-      $('menu-status').textContent = envelope.menu ? (envelope.menu.reviewed ? `Reviewed menu · ${count} ${count === 1 ? 'dish' : 'dishes'}` : `Review ${count} extracted ${count === 1 ? 'dish' : 'dishes'}`) : !$('menu-preview').hidden ? 'Photo preview · not read' : !$('open-menu-link').hidden ? 'Link saved · not read' : 'Add a restaurant menu';
+      const linkCount = app.menuLinks.length;
+      $('menu-status').textContent = envelope.menu ? (envelope.menu.reviewed ? `Reviewed menu · ${count} ${count === 1 ? 'dish' : 'dishes'}` : `Review ${count} extracted ${count === 1 ? 'dish' : 'dishes'}`) : !$('menu-preview').hidden ? 'Photo preview · not read' : linkCount ? (linkCount === 1 ? 'Link saved · not read' : `${linkCount} links saved · not read`) : 'Add a restaurant menu';
     }
     const locked = !available || app.busy;
     $('retry-menu').hidden = app.mode !== 'server' || loaded;

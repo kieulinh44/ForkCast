@@ -63,12 +63,8 @@
 </div>
 <p class="hero-note">UI preview: menu analysis and recommendations are not connected yet.</p>
 </div>
-<div class="hero-art" aria-hidden="true">
-<span class="art-kicker">GOOD TASTE. NO GUESSWORK.</span>
-<img src="assets/diner-burger.svg" alt="" width="300" height="230">
-<span class="art-stamp">Made for<br>
-<strong>your taste.</strong>
-</span>
+<div class="hero-art">
+<img class="hero-logo" src="assets/forkcast-logo.svg" alt="ForkCast logo" width="420" height="260">
 </div>
 </div>
 <div class="section-heading">
@@ -216,11 +212,18 @@
 <p id="menu-link-help" class="muted">Paste a full http:// or https:// menu URL. Your saved link stays on this browser; the website is not imported or analyzed.</p>
 <div class="menu-link-actions">
 <button class="primary" type="submit">Save menu link</button>
-<a id="open-menu-link" class="secondary" target="_blank" rel="noopener noreferrer" hidden>Open saved menu</a>
-<button class="secondary" type="button" id="remove-menu-link" hidden>Remove saved link</button>
 </div>
 <p id="menu-link-message" role="status" class="muted">
 </p>
+<section class="saved-menu" aria-labelledby="saved-menu-title">
+<h3 id="saved-menu-title">Saved restaurant links</h3>
+<p id="saved-menu-empty" class="muted">No restaurant link saved yet. Paste a link above and choose Save menu link.</p>
+<div id="saved-menu-details" hidden>
+<p id="saved-menu-status" class="saved-menu-status"></p>
+<ul id="saved-menu-list" class="saved-menu-list" aria-label="Saved menus"></ul>
+<p class="muted saved-menu-help">Keep up to 50 restaurant links. Each Visit website or Remove action applies only to its own entry. Adding a link does not replace your other links. Websites are not imported or analyzed.</p>
+</div>
+</section>
 </form>
 <div class="notice">
 <strong>Links are saved only, not read.</strong>

@@ -1,5 +1,13 @@
 const { test, expect } = require('@playwright/test');
 
+test('legacy project brief route keeps credits visible without professor feedback', async ({ page }) => {
+  await page.goto('/#brief');
+  await expect(page.locator('#view-overview')).toBeVisible();
+  await expect(page.locator('.footer')).toContainText('Linh · Jamie · Jana · Kelly · Mirina');
+  await expect(page.locator('body')).not.toContainText("Professor's feedback");
+  await expect(page.locator('body')).not.toContainText('Professor Dobolyi');
+});
+
 test('a new visitor sees a plain-language craving-first ordering flow', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Not sure what to order?' })).toBeVisible();

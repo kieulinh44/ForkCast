@@ -8,6 +8,11 @@ test('starter has a state module for browser-local drafts', () => {
 });
 
 const State = require('../state.js');
+test('menu-link lists preserve legacy URLs, normalize safely, and deduplicate', () => {
+  assert.deepEqual(State.menuLinks({ menuUrl: 'https://example.com/menu' }), ['https://example.com/menu']);
+  assert.deepEqual(State.menuLinks({ menuUrl: 'https://example.com/menu', menuUrls: ['https://example.com/menu', 'https://other.example', 'javascript:alert(1)', 'https://name:pass@example.com'] }), ['https://example.com/menu', 'https://other.example/']);
+  assert.deepEqual(State.menuLinks({ menuUrl: '', menuUrls: [] }), []);
+});
 test('drafts round-trip and malformed storage falls back to an empty draft', () => {
   let value;
   const storage = { getItem: () => value, setItem: (key, data) => { value = data; } };
