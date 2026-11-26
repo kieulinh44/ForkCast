@@ -19,6 +19,90 @@ async function stubApi(page, initial = empty()) {
   return api;
 }
 
+test('failed menu-link replacement or removal keeps the actual saved URL visible', async ({ page }) => {
+  const previous = 'https://example.com/original-menu';
+  const replacement = 'https://example.com/new-menu';
+  const server = await stubApi(page, { ...empty(), menuUrl: previous });
+  await page.goto('/#menu');
+  await expect(page.locator('.saved-menu-url')).toHaveText(previous);
+  server.failWrites = true;
+  await page.getByLabel('Restaurant menu link').fill(replacement);
+  await page.getByRole('button', { name: 'Save menu link', exact: true }).click();
+  await expect(page.locator('#menu-link-message')).toContainText('Link not saved');
+  await expect(page.getByLabel('Restaurant menu link')).toHaveValue(replacement);
+  await expect(page.locator('.saved-menu-url')).toHaveText(previous);
+  await expect(page.getByRole('link', { name: 'Visit website (new tab)', exact: true })).toHaveAttribute('href', previous);
+  expect(server.state.menuUrl).toBe(previous);
+  server.failWrites = false;
+  await page.goto('/#profile');
+  await page.getByLabel('Display name').fill('Sample diner');
+  await page.getByRole('button', { name: 'Save taste profile' }).click();
+  await expect.poll(() => server.state.profile.name).toBe('Sample diner');
+  expect(server.state.menuUrl).toBe(previous);
+  await page.goto('/#menu');
+  server.failWrites = true;
+  await page.getByRole('button', { name: 'Remove saved link', exact: true }).click();
+  await expect(page.locator('#menu-link-message')).toContainText('Link not removed');
+  await expect(page.locator('.saved-menu-url')).toHaveText(previous);
+  server.failWrites = false;
+  await page.getByRole('button', { name: 'Remove saved link', exact: true }).click();
+  await expect(page.locator('#menu-link-message')).toContainText(`Saved link removed: ${previous}`);
+  await expect(page.locator('#saved-menu-empty')).toBeVisible();
+  expect(server.state.menuUrl).toBe('');
+  await page.reload();
+  await expect(page.locator('#saved-menu-empty')).toBeVisible();
+});
+
+test('saved-link status changes only after a successful save and restores on reload', async ({ page }) => {
+  const server = await stubApi(page);
+  await page.goto('/#menu');
+  const url = 'https://example.com/menu';
+  await expect(page.getByLabel('Restaurant menu link')).toBeEnabled();
+  server.failWrites = true;
+  await page.getByLabel('Restaurant menu link').fill(url);
+  await page.getByRole('button', { name: 'Save menu link', exact: true }).click();
+  await expect(page.locator('#menu-link-message')).toContainText('Link not saved');
+  await expect(page.locator('#saved-menu-empty')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Visit website (new tab)', exact: true })).toBeHidden();
+  server.failWrites = false;
+  await page.getByRole('button', { name: 'Save menu link', exact: true }).click();
+  await expect(page.locator('.saved-menu-url')).toHaveText(url);
+  await expect(page.locator('#saved-menu-status')).toContainText('Saved to this server');
+  await page.reload();
+  await expect(page.locator('.saved-menu-url')).toHaveText(url);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const longUrl = `https://example.com/menu?filter=${'a'.repeat(300)}`;
+  await page.getByLabel('Restaurant menu link').fill(longUrl);
+  await page.getByRole('button', { name: 'Save menu link', exact: true }).click();
+  await expect(page.locator('.saved-menu-url')).toHaveText([url, longUrl]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/saved-link-mobile.png', fullPage: true });
+});
+
+test('failed additions and removals preserve every existing saved menu', async ({ page }) => {
+  const a = 'https://example.com/menu-a';
+  const b = 'https://example.com/menu-b';
+  const c = 'https://example.com/menu-c';
+  const server = await stubApi(page, { ...empty(), menuUrl: b, menuUrls: [a, b] });
+  await page.goto('/#menu');
+  await expect(page.locator('.saved-menu-url')).toHaveText([a, b]);
+  server.failWrites = true;
+  await page.getByLabel('Restaurant menu link').fill(c);
+  await page.getByRole('button', { name: 'Save menu link', exact: true }).click();
+  await expect(page.locator('#menu-link-message')).toContainText('Link not saved');
+  await expect(page.locator('.saved-menu-url')).toHaveText([a, b]);
+  const first = page.getByRole('listitem', { name: `Saved menu: ${a}`, exact: true });
+  await first.getByRole('button', { name: 'Remove saved link', exact: true }).click();
+  await expect(page.locator('#menu-link-message')).toContainText('Link not removed');
+  await expect(page.locator('.saved-menu-url')).toHaveText([a, b]);
+  expect(server.state.menuUrls).toEqual([a, b]);
+  server.failWrites = false;
+  await first.getByRole('button', { name: 'Remove saved link', exact: true }).click();
+  await expect(page.locator('.saved-menu-url')).toHaveText([b]);
+  await page.reload();
+  await expect(page.locator('.saved-menu-url')).toHaveText([b]);
+});
+
 test('backend workspace loads without silently importing a browser-only draft', async ({ page }) => {
   const server = await stubApi(page, { ...empty(), profile: { name: 'Server diner' } });
   await page.addInitScript(() => localStorage.setItem('forkcast.draft.v1', JSON.stringify({ profile: { name: 'Local diner' }, mood: '', craving: '', feedback: [], menuUrl: '' })));

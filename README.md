@@ -16,6 +16,8 @@ The intended flow is **Cravings → Restaurant menu → Dish recommendations**. 
 
 **Still not implemented:** restaurant website/PDF import or menu discovery (step 3), preference learning, and accounts. Menu links remain save/open/remove only. Original menu-photo bytes are not retained; extracted/reviewed text is saved. A photo with no readable menu is an error, not invented data.
 
+The restaurant-menu screen keeps up to 50 saved links, each with its own full URL, website action, and removal button. New links append instead of replacing previous ones; normalized duplicates are prevented. Existing single-link workspaces remain compatible and their saved link appears in the list. The optional `menuUrls` collection is persisted in the existing guest-state JSON without replacing the database; `menuUrl` is retained for legacy compatibility. Failed saves or removals leave the confirmed saved list intact.
+
 The existing class **DeepSeek text** and **Qwen vision** services are configured server-side and have passed synthetic local inference checks. Analyze photo with AI sends only the resized menu image to Qwen; Generate recommendations sends saved profile/craving and reviewed-menu data to DeepSeek. These are explicit actions, never automatic page-load or preference-save requests. Availability can change; use the on-demand checker below. A configured status is not a live service check. The class services use unencrypted HTTP: use sample data, never sensitive dietary details or private photos.
 
 ## Run the actual app locally

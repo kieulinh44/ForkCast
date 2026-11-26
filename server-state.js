@@ -10,6 +10,7 @@
       if (!state || !state.profile || typeof state.profile !== 'object' || Array.isArray(state.profile) ||
           typeof state.mood !== 'string' || typeof state.craving !== 'string' ||
           !Array.isArray(state.feedback) || typeof state.menuUrl !== 'string' ||
+          (state.menuUrls !== undefined && (!Array.isArray(state.menuUrls) || state.menuUrls.length > 50 || state.menuUrls.some(url => typeof url !== 'string' || url.length > 2048))) ||
           !Number.isSafeInteger(envelope.revision) || envelope.revision < 0) {
         throw new Error('The server returned invalid saved data. Reload before saving.');
       }

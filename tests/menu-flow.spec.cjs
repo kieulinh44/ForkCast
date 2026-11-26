@@ -18,6 +18,21 @@ async function setup(page) {
   await page.goto('/#menu');
   return api;
 }
+test('saved restaurant links coexist with the reviewed-menu workflow', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await setup(page);
+  await expect(page.getByRole('button', { name: 'Enter menu manually', exact: true })).toBeEnabled();
+  for (const url of ['https://example.com/a', 'https://example.com/b']) {
+    await page.getByLabel('Restaurant menu link').fill(url);
+    await page.getByRole('button', { name: 'Save menu link', exact: true }).click();
+    await expect(page.locator('#menu-link-message')).toContainText('saved');
+  }
+  await expect(page.locator('.saved-menu-entry')).toHaveCount(2);
+  await expect(page.locator('#menu-status')).toHaveText('2 links saved · not read');
+  await expect(page.getByRole('button', { name: 'Enter menu manually', exact: true })).toBeEnabled();
+  expect(errors).toEqual([]);
+});
 async function manual(page){await page.getByRole('button',{name:'Enter menu manually'}).click();await page.getByLabel('Dish 1 name',{exact:true}).fill('Tomato soup');await page.getByLabel('Dish 1 description',{exact:true}).fill('Warm tomato soup');}
 test('manual review is required before explicit grounded generation',async({page})=>{const api=await setup(page);await manual(page);await expect(page.locator('#generate-recommendations')).toBeDisabled();await page.getByRole('button',{name:'Save reviewed menu',exact:true}).click();await expect(page.locator('#review-status')).toContainText('Reviewed menu saved');await page.getByRole('button',{name:'Continue to dish recommendations'}).click();await expect(page.locator('#recommendation-context')).toContainText('warm soup');await page.getByRole('button',{name:'Generate recommendations',exact:true}).click();await expect(page.locator('.recommendation-card')).toContainText('Tomato soup');await expect(page.locator('.recommendation-card')).toContainText('Price unknown');await expect(page.locator('.recommendation-card')).toContainText('Budget cannot be verified');expect(api.calls.filter(c=>c.path==='/api/recommendations')).toHaveLength(1);expect(api.menu.currency).toBeNull();expect(api.menu.items[0].price).toBeNull();});
 test('photo stays local until Analyze, then editable extraction saves exact IDs and safe text',async({page})=>{

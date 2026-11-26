@@ -15,6 +15,7 @@ PUBLIC_FILES = {
     '/styles.css': ('styles.css', 'text/css; charset=utf-8'),
     '/assets/diner-burger.svg': ('assets/diner-burger.svg', 'image/svg+xml'),
     '/assets/favicon.svg': ('assets/favicon.svg', 'image/svg+xml'),
+    '/assets/forkcast-logo.svg': ('assets/forkcast-logo.svg', 'image/svg+xml'),
 }
 
 class PreviewHandler(BaseHTTPRequestHandler):

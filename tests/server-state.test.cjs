@@ -101,6 +101,12 @@ test('malformed state cannot be loaded or treated as persisted', async () => {
   await assert.rejects(client.initialize(), /invalid saved data/);
   assert.equal(client.mode, 'offline');
 });
+test('server adapter rejects malformed menu-link collections instead of losing links', async () => {
+  for (const menuUrls of ['not a list', [123], Array(51).fill('https://example.com/menu')]) {
+    const client = create(async path => response(200, path === '/api/health' ? health : { state: { ...empty(), menuUrls }, revision: 0 }));
+    await assert.rejects(client.initialize(), /invalid saved data/);
+  }
+});
 test('save can be retried after a transient failure without changing the expected revision', async () => {
   let failing = true;
   const client = create(async (path, options) => {

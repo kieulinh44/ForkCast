@@ -53,7 +53,7 @@ let saveBusy = false;
 let lastSaveError = '';
 let lastConnectionError = '';
 let savedProfile = JSON.stringify(draft.profile);
-let savedMenuUrl = draft.menuUrl;
+let savedMenuUrls = ForkCastState.menuLinks(draft);
 let savedMood = JSON.stringify([draft.mood, draft.craving]);
 let mealPhoto = '';
 let mealPhotoVersion = 0;
@@ -102,8 +102,10 @@ function renderSummary() {
   const moodStatus = moodPersisted ? (draft.mood || 'Craving saved') : 'Craving not saved';
   document.getElementById('mood-status').textContent = draft.mood || draft.craving ? moodStatus : 'Choose a craving';
   const hasPhoto = !document.getElementById('menu-preview').hidden;
-  const linkStatus = savedMenuUrl === draft.menuUrl ? 'Link saved · not read' : 'Link not saved · not read';
-  document.getElementById('menu-status').textContent = hasPhoto ? 'Photo preview · not read' : (validMenuUrl(draft.menuUrl) ? linkStatus : 'Add a restaurant menu');
+  const menuUrls = ForkCastState.menuLinks(draft);
+  const linksPersisted = JSON.stringify(savedMenuUrls) === JSON.stringify(menuUrls);
+  const linkStatus = linksPersisted ? (menuUrls.length === 1 ? 'Link saved · not read' : `${menuUrls.length} links saved · not read`) : 'Links not saved · not read';
+  document.getElementById('menu-status').textContent = hasPhoto ? 'Photo preview · not read' : (menuUrls.length ? linkStatus : 'Add a restaurant menu');
 }
 function renderFeedback() {
   const list = document.getElementById('feedback-list');
@@ -282,22 +284,58 @@ removePhoto.addEventListener('click', () => {
 window.addEventListener('pagehide', clearPhoto);
 
 function validMenuUrl(value) {
-  try {
-    const url = new URL(value);
-    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && value.length <= 2048 ? url.href : '';
-  } catch { return ''; }
+  return ForkCastState.normalizeMenuUrl(value);
 }
-function renderMenuLink() {
-  const saved = validMenuUrl(draft.menuUrl);
-  document.getElementById('menu-url').value = saved;
+function renderMenuLink({ restoreInput = true } = {}) {
+  const urls = storageReady ? savedMenuUrls : [];
+  if (restoreInput) document.getElementById('menu-url').value = validMenuUrl(draft.menuUrl);
   document.getElementById('menu-url').removeAttribute('aria-invalid');
-  const open = document.getElementById('open-menu-link');
-  open.hidden = !saved;
-  if (saved) open.href = saved;
-  else open.removeAttribute('href');
-  document.getElementById('remove-menu-link').hidden = !saved;
-  document.getElementById('menu-link-message').textContent = saved ? `Menu link saved ${storageDescription()}. No website analysis has been run.` : '';
+  document.getElementById('saved-menu-empty').hidden = urls.length > 0;
+  document.getElementById('saved-menu-details').hidden = urls.length === 0;
+  document.getElementById('saved-menu-title').textContent = urls.length ? `Saved restaurant links (${urls.length})` : 'Saved restaurant links';
+  document.getElementById('saved-menu-status').textContent = urls.length ? `Saved ${storageDescription()}.` : '';
+  const list = document.getElementById('saved-menu-list');
+  list.replaceChildren();
+  urls.forEach((url, index) => {
+    const item = document.createElement('li');
+    item.className = 'saved-menu-entry';
+    item.setAttribute('aria-label', `Saved menu: ${url}`);
+    const name = document.createElement('strong');
+    name.className = 'saved-menu-name';
+    name.textContent = new URL(url).hostname.replace(/^www\./, '');
+    const address = document.createElement('p');
+    address.className = 'saved-menu-url';
+    address.id = `saved-menu-url-${index}`;
+    address.textContent = url;
+    const actions = document.createElement('div');
+    actions.className = 'menu-link-actions';
+    const open = document.createElement('a');
+    open.className = 'secondary';
+    open.href = url;
+    open.target = '_blank';
+    open.rel = 'noopener noreferrer';
+    open.textContent = 'Visit website (new tab)';
+    open.setAttribute('aria-describedby', address.id);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'secondary';
+    remove.dataset.removeMenuUrl = url;
+    remove.disabled = saveBusy || !storageReady;
+    remove.textContent = 'Remove saved link';
+    remove.setAttribute('aria-describedby', address.id);
+    actions.append(open, remove);
+    item.append(name, address, actions);
+    list.append(item);
+  });
+  document.getElementById('menu-link-message').textContent = urls.length ? `Menu links saved ${storageDescription()}. No website analysis has been run.` : '';
 }
+document.getElementById('menu-url').addEventListener('input', event => {
+  const input = event.currentTarget;
+  input.removeAttribute('aria-invalid');
+  const value = input.value.trim();
+  const alreadySaved = savedMenuUrls.includes(validMenuUrl(value));
+  document.getElementById('menu-link-message').textContent = alreadySaved ? 'This link is already saved. See its entry below.' : value ? 'Changes not saved. Choose Save menu link to add this URL. Your saved links below have not changed.' : '';
+});
 document.getElementById('menu-link-form').addEventListener('submit', async event => {
   event.preventDefault();
   const input = document.getElementById('menu-url');
@@ -308,16 +346,35 @@ document.getElementById('menu-link-form').addEventListener('submit', async event
     input.focus();
     return;
   }
-  draft.menuUrl = url;
-  const saved = await saveDraft(draft);
-  renderMenuLink();
-  if (!saved) document.getElementById('menu-link-message').textContent = storageMode === 'server' ? lastSaveError : 'Browser storage is unavailable. This link will be lost on refresh.';
+  if (savedMenuUrls.includes(url)) {
+    document.getElementById('menu-link-message').textContent = 'This link is already saved. Your saved links have not changed.';
+    return;
+  }
+  if (savedMenuUrls.length >= 50) {
+    document.getElementById('menu-link-message').textContent = 'You can save up to 50 restaurant links. Remove one before adding another.';
+    return;
+  }
+  const next = { ...draft, menuUrl: url, menuUrls: [...savedMenuUrls, url] };
+  const saved = await saveDraft(next);
+  if (saved) draft = next;
+  renderMenuLink({ restoreInput: saved });
+  renderSummary();
+  if (saved) input.value = '';
+  if (!saved) document.getElementById('menu-link-message').textContent = `Link not saved. Your input is still here and the saved entry has not changed. ${lastSaveError}`;
 });
-document.getElementById('remove-menu-link').addEventListener('click', async () => {
-  draft.menuUrl = '';
-  const saved = await saveDraft(draft);
-  renderMenuLink();
-  document.getElementById('menu-link-message').textContent = saved ? 'Saved link removed.' : (storageMode === 'server' ? lastSaveError : 'Link removed from this page, but browser storage is unavailable.');
+document.getElementById('saved-menu-list').addEventListener('click', async event => {
+  const button = event.target.closest('button[data-remove-menu-url]');
+  if (!button || saveBusy || !storageReady) return;
+  const removedUrl = validMenuUrl(button.dataset.removeMenuUrl);
+  if (!savedMenuUrls.includes(removedUrl)) return;
+  const remaining = savedMenuUrls.filter(url => url !== removedUrl);
+  const next = { ...draft, menuUrl: validMenuUrl(draft.menuUrl) === removedUrl ? (remaining.at(-1) || '') : draft.menuUrl, menuUrls: remaining };
+  const saved = await saveDraft(next);
+  if (saved) draft = next;
+  renderMenuLink({ restoreInput: saved });
+  renderSummary();
+  if (saved) document.getElementById('menu-url').value = '';
+  document.getElementById('menu-link-message').textContent = saved ? `Saved link removed: ${removedUrl}` : `Link not removed. The saved entry is unchanged. ${lastSaveError}`;
   document.getElementById('menu-url').focus();
 });
 
@@ -404,12 +461,12 @@ function lockSavedForms(locked) {
 }
 function rememberSavedState(state) {
   savedProfile = JSON.stringify(state.profile);
-  savedMenuUrl = state.menuUrl;
+  savedMenuUrls = ForkCastState.menuLinks(state);
   savedMood = JSON.stringify([state.mood, state.craving]);
   window.dispatchEvent(new Event('forkcast:saved'));
 }
 function hasSavedDetails(state) {
-  return Object.values(state.profile).some(Boolean) || !!state.mood || !!state.craving || state.feedback.length > 0 || !!state.menuUrl;
+  return Object.values(state.profile).some(Boolean) || !!state.mood || !!state.craving || state.feedback.length > 0 || ForkCastState.menuLinks(state).length > 0;
 }
 function storageDescription() {
   return storageMode === 'server' ? 'to this server for this guest browser' : 'on this browser';
@@ -494,6 +551,7 @@ window.ForkCastApp = {
   get ready() { return storageReady; },
   get busy() { return saveBusy; },
   get revision() { return serverClient.revision; },
+  get menuLinks() { return [...savedMenuUrls]; },
   get context() { const [mood, craving] = JSON.parse(savedMood); return { profile: JSON.parse(savedProfile), mood, craving }; },
   async withServerOperation(task) {
     if (!storageReady || saveBusy || storageMode !== 'server') throw new Error('Please wait for the server to be ready.');
