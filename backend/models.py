@@ -50,8 +50,10 @@ class State(StrictModel):
     @field_validator('profile')
     @classmethod
     def profile_keys(cls, value):
-        if set(value) - {'name', 'budget', 'favorites', 'dislikes', 'dietary', 'allergies', 'spice'}:
+        if set(value) - {'name', 'budget', 'favorites', 'dislikes', 'dietary', 'allergies', 'spice', 'currency'}:
             raise ValueError('Invalid profile')
+        if 'currency' in value and not re.fullmatch(r'[A-Z]{3}', value['currency']):
+            raise ValueError('Invalid currency')
         return value
 
     @field_validator('menuUrl')

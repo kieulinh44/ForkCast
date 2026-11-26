@@ -1,4 +1,4 @@
-"""Version-one SQLite migration and conservative connection settings."""
+"""Transactional schema-two migration and conservative connection settings."""
 import sqlite3
 import os
 
@@ -10,14 +10,18 @@ def connect(settings):
         if os.name == 'posix':
             settings.db_path.chmod(0o600)
         db.execute('PRAGMA busy_timeout=1000')
-        version = db.execute('PRAGMA user_version').fetchone()[0]
-        if version > 1:
-            raise sqlite3.DatabaseError('Unsupported schema')
+        db.execute('PRAGMA foreign_keys=ON')
         db.execute('PRAGMA journal_mode=WAL')
-        if version == 0:
-            with db:
+        with db:
+            db.execute('BEGIN IMMEDIATE')
+            version = db.execute('PRAGMA user_version').fetchone()[0]
+            if version > 2:
+                raise sqlite3.DatabaseError('Unsupported schema')
+            if version == 0:
                 db.execute('CREATE TABLE IF NOT EXISTS guests (id TEXT PRIMARY KEY, expires_at INTEGER NOT NULL, state TEXT NOT NULL, revision INTEGER NOT NULL, updated_at INTEGER NOT NULL)')
-                db.execute('PRAGMA user_version=1')
+            if version < 2:
+                db.execute('CREATE TABLE workflows (guest_id TEXT PRIMARY KEY REFERENCES guests(id) ON DELETE CASCADE, revision INTEGER NOT NULL DEFAULT 0, menu TEXT, recommendations TEXT, context_digest TEXT)')
+                db.execute('PRAGMA user_version=2')
         return db
     except BaseException:
         db.close()

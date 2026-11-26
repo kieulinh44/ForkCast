@@ -21,7 +21,7 @@ test('meal photos are optional and persist with reviews after reload', async ({ 
   await expect(page.locator('#feedback-list img')).toHaveCount(0);
 });
 
-test('proposal dashboard is accessible and responsive', async ({ page }) => {
+test('dashboard is accessible and responsive', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
@@ -29,9 +29,6 @@ test('proposal dashboard is accessible and responsive', async ({ page }) => {
   await expect(page.locator('.footer').getByText('Made by Linh · Jamie · Jana · Kelly · Mirina', { exact: false })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'A foundation to build on.' })).toHaveCount(0);
   await expect(page.locator('#view-overview .build-note')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Project brief', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'The idea behind ForkCast' })).toBeVisible();
-  await expect(page.getByText('Dining out should be an enjoyable experience', { exact: false })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Taste profile', exact: true })).toBeVisible();

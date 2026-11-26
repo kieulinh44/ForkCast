@@ -1,0 +1,17 @@
+{
+  "fixture_type": "synthetic menu ground truth, not a model response",
+  "restaurant_name": "Maple Street Test Kitchen",
+  "currency": "USD",
+  "items": [
+    {"name": "Herb Lentil Bowl", "price": 12.0},
+    {"name": "Creamy Mushroom Pasta", "price": 18.5},
+    {"name": "Peanut Chicken Noodles", "price": 16.0},
+    {"name": "Grilled Salmon Plate", "price": 24.0},
+    {"name": "Garden Side Salad", "price": null}
+  ],
+  "sample_profile": {"budget": "20", "currency": "USD", "dietary": "Vegetarian", "allergies": "Peanuts", "dislikes": "Mushrooms", "favorites": "Lentils, lemon"},
+  "sample_craving": "Fresh and light, with lemon",
+  "known_conflict_or_budget_exclusions": ["Creamy Mushroom Pasta", "Peanut Chicken Noodles", "Grilled Salmon Plate"],
+  "remaining_choices": ["Herb Lentil Bowl", "Garden Side Salad"],
+  "notes": "The salad has no listed price, not a zero price. No dish is certified allergy-safe by this fixture."
+}

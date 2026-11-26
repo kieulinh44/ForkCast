@@ -4,6 +4,7 @@
 !backend/*.py
 !index.html
 !app.js
+!menu-flow.js
 !state.js
 !styles.css
 !server-state.js

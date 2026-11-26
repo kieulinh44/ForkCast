@@ -37,7 +37,7 @@ test('failed craving save does not advance or lose the entered craving', async (
 });
 
 test('interface copy uses American favorite spelling on every screen', async ({ page }) => {
-  for (const view of ['overview', 'mood', 'menu', 'picks', 'profile', 'feedback', 'preferences', 'brief']) {
+  for (const view of ['overview', 'mood', 'menu', 'picks', 'profile', 'feedback', 'preferences']) {
     await page.goto('/#' + view);
     expect(await page.locator('body').textContent()).not.toMatch(/favourites?/i);
   }

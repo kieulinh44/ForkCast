@@ -1,4 +1,4 @@
-"""ForkCast step-one same-origin API; no automatic upstream inference."""
+"""ForkCast same-origin API; model calls require explicit user actions."""
 import sqlite3
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -32,7 +32,7 @@ def create_app(settings=None):
     def health():
         with connection(settings) as db:
             db.execute('SELECT id FROM guests LIMIT 1').fetchall()
-        return {'ok': True, 'database': {'ok': True, 'schema_version': 1}, 'services': {name: {'configured': getattr(settings, name).configured} for name in ('text', 'vision')}, 'features': {'menu_extraction': False, 'recommendations': False, 'preference_learning': False}}
+        return {'ok': True, 'database': {'ok': True, 'schema_version': 2}, 'services': {name: {'configured': getattr(settings, name).configured} for name in ('text', 'vision')}, 'features': {'menu_extraction': True, 'recommendations': True, 'preference_learning': False}}
 
     @app.get('/api/state')
     def read_state(request: Request):
@@ -68,9 +68,42 @@ def create_app(settings=None):
     @app.delete('/api/state')
     async def delete_state(request: Request):
         body = await parse_write(request, DeleteState)
-        return await run_in_threadpool(write_state, settings, request.cookies.get('forkcast_guest'), empty_state(), body.revision)
+        return await run_in_threadpool(write_state, settings, request.cookies.get('forkcast_guest'), empty_state(), body.revision, True)
 
-    static_names = {'index.html', 'app.js', 'state.js', 'styles.css', 'server-state.js', 'system-status.js'}
+    @app.get('/api/menu')
+    def read_menu(request: Request):
+        from .workflow import read_workflow
+        return read_workflow(settings, request.cookies.get('forkcast_guest'))[0]
+
+    @app.put('/api/menu')
+    async def put_menu(request: Request):
+        from .menu_models import PutMenu
+        from .workflow import reviewed_menu
+        body = await parse_write(request, PutMenu)
+        return await run_in_threadpool(reviewed_menu, settings, request.cookies.get('forkcast_guest'), body)
+
+    @app.delete('/api/menu')
+    async def delete_menu(request: Request):
+        from .menu_models import WorkflowVersion
+        from .workflow import write_workflow
+        body = await parse_write(request, WorkflowVersion)
+        return await run_in_threadpool(write_workflow, settings, request.cookies.get('forkcast_guest'), body, None)
+
+    @app.post('/api/menu/extract')
+    async def extract_menu(request: Request):
+        from .menu_models import ExtractMenu
+        from .pipeline import extract
+        body = await parse_write(request, ExtractMenu)
+        return await run_in_threadpool(extract, settings, request.cookies.get('forkcast_guest'), body, getattr(app.state, 'model_transport', None))
+
+    @app.post('/api/recommendations')
+    async def recommendations(request: Request):
+        from .menu_models import WorkflowVersion
+        from .pipeline import recommend
+        body = await parse_write(request, WorkflowVersion)
+        return await run_in_threadpool(recommend, settings, request.cookies.get('forkcast_guest'), body, getattr(app.state, 'model_transport', None))
+
+    static_names = {'index.html', 'app.js', 'state.js', 'styles.css', 'server-state.js', 'system-status.js', 'menu-flow.js'}
     asset_names = {str(p.relative_to(ROOT)) for p in (ROOT / 'assets').glob('*.svg') if p.is_file() and not p.is_symlink()}
 
     @app.api_route('/{path:path}', methods=['GET', 'HEAD'])

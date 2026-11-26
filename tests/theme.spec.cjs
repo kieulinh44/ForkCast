@@ -11,7 +11,7 @@ function contrast(hexA, hexB) {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 
-test('Corner Diner theme preserves readable text and all nine views', async ({ page }) => {
+test('Corner Diner theme preserves readable text and all eight views', async ({ page }) => {
   await page.goto('/');
   const palette = await page.evaluate(() => {
     const style = getComputedStyle(document.documentElement);
@@ -24,7 +24,7 @@ test('Corner Diner theme preserves readable text and all nine views', async ({ p
   }
   for (const width of [1440, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 950 });
-    for (const view of ['overview', 'profile', 'menu', 'mood', 'picks', 'feedback', 'preferences', 'brief', 'system']) {
+    for (const view of ['overview', 'profile', 'menu', 'mood', 'picks', 'feedback', 'preferences', 'system']) {
       await page.goto(`/#${view}`);
       await expect(page.locator(`#view-${view}`)).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${view} at ${width}px`).toBe(true);

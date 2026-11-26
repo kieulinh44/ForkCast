@@ -44,7 +44,7 @@ def get_state(settings, cookie):
         return {'state': state, 'revision': 0}, cookie
 
 
-def write_state(settings, cookie, state, revision):
+def write_state(settings, cookie, state, revision, clear=False):
     from fastapi import HTTPException
     now = int(time.time())
     with connection(settings) as db:
@@ -54,5 +54,7 @@ def write_state(settings, cookie, state, revision):
             raise HTTPException(403, 'Guest session required')
         if row[0] != revision:
             raise HTTPException(409, 'State changed; reload before retrying')
+        if clear:
+            db.execute('DELETE FROM workflows WHERE guest_id=?', (guest_id(cookie),))
         db.execute('UPDATE guests SET state=?, revision=?, updated_at=? WHERE id=?', (json.dumps(state), revision + 1, now, guest_id(cookie)))
     return {'state': state, 'revision': revision + 1}

@@ -9,6 +9,7 @@ PUBLIC_FILES = {
     '/': ('index.html', 'text/html; charset=utf-8'),
     '/index.html': ('index.html', 'text/html; charset=utf-8'),
     '/app.js': ('app.js', 'text/javascript; charset=utf-8'),
+    '/menu-flow.js': ('menu-flow.js', 'text/javascript; charset=utf-8'),
     '/state.js': ('state.js', 'text/javascript; charset=utf-8'),
     '/server-state.js': ('server-state.js', 'text/javascript; charset=utf-8'),
     '/styles.css': ('styles.css', 'text/css; charset=utf-8'),

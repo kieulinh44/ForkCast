@@ -18,7 +18,7 @@ document.addEventListener('keydown', event => {
     navToggle.focus();
   }
 });
-const viewNames = { overview: 'Home', profile: 'Taste profile', menu: 'Restaurant menu', mood: 'Cravings', picks: 'Dish recommendations', feedback: 'Meal history', preferences: 'Learned preferences', brief: 'Project brief', system: 'System status' };
+const viewNames = { overview: 'Home', profile: 'Taste profile', menu: 'Restaurant menu', mood: 'Cravings', picks: 'Dish recommendations', feedback: 'Meal history', preferences: 'Learned preferences', system: 'System status' };
 function showView(name, focus = false) {
   const view = Object.hasOwn(viewNames, name) ? name : 'overview';
   document.querySelectorAll('.view').forEach(section => { section.hidden = section.id !== `view-${view}`; });
@@ -141,8 +141,10 @@ function restoreForms() {
   profileForm.reset();
   Object.entries(draft.profile).forEach(([key, value]) => {
     const field = profileForm.elements.namedItem(key);
+    if (key === 'currency' && /^[A-Z]{3}$/.test(value) && !Array.from(field.options).some(option => option.value === value)) field.add(new Option(value, value));
     if (field && 'value' in field && typeof value === 'string') field.value = value;
   });
+  updateBudgetLabel();
   const moodForm = document.getElementById('mood-form');
   moodForm.reset();
   for (const radio of moodForm.querySelectorAll('input[type=radio]')) radio.checked = radio.value === draft.mood;
@@ -151,13 +153,19 @@ function restoreForms() {
   renderSummary();
   renderFeedback();
 }
+function updateBudgetLabel() {
+  document.getElementById('budget-label').textContent = `Budget per dish (${document.getElementById('profile-currency').value || 'USD'})`;
+}
+document.getElementById('profile-currency').addEventListener('change', updateBudgetLabel);
 document.getElementById('profile-form').addEventListener('submit', async event => {
   event.preventDefault();
+  if (!storageReady || saveBusy) return;
   draft.profile = Object.fromEntries(Array.from(new FormData(event.currentTarget), ([key, value]) => [key, value.trim()]));
   await persist(`Taste profile saved ${storageDescription()}.`);
 });
 document.getElementById('mood-form').addEventListener('submit', async event => {
   event.preventDefault();
+  if (!storageReady || saveBusy) return;
   const form = new FormData(event.currentTarget);
   draft.mood = form.get('mood') || '';
   draft.craving = form.get('craving').trim();
@@ -189,7 +197,7 @@ document.getElementById('feedback-form').addEventListener('submit', async event 
 document.getElementById('clear-data').addEventListener('click', async () => {
   if (!storageReady || saveBusy) return;
   const prompt = storageMode === 'server'
-    ? 'Clear saved profile, craving, menu link, reviews, and meal photos for this guest browser on the server, plus any browser-only draft on this device? Other guests are not affected. This cannot be undone.'
+    ? 'Clear saved profile, craving, menu link, reviewed menu, recommendations, reviews, and meal photos for this guest browser on the server, plus any browser-only draft on this device? Other guests are not affected. This cannot be undone.'
     : 'Clear your ForkCast profile, mood, saved menu link, meal feedback, and saved meal photos from this browser? This cannot be undone.';
   if (!window.confirm(prompt)) return;
   saveBusy = true;
@@ -211,6 +219,7 @@ document.getElementById('clear-data').addEventListener('click', async () => {
     menuFile.value = '';
     menuMessage.textContent = '';
     restoreForms();
+    window.dispatchEvent(new Event('forkcast:cleared'));
     notify(storageMode === 'server' ? (localCopyRemoved ? 'Saved data cleared for this guest browser.' : 'Server data cleared, but a browser-only copy could not be removed.') : 'Local drafts cleared.');
   } catch (error) {
     notify(storageMode === 'server' ? error.message : 'Browser storage is unavailable. Saved data could not be cleared; your current details are still here.');
@@ -391,11 +400,13 @@ function updateFeedbackSubmitState() {
 function lockSavedForms(locked) {
   document.querySelectorAll('form input, form select, form textarea, form button, #clear-data, #import-local').forEach(control => { control.disabled = locked; });
   updateFeedbackSubmitState();
+  window.dispatchEvent(new Event('forkcast:lock'));
 }
 function rememberSavedState(state) {
   savedProfile = JSON.stringify(state.profile);
   savedMenuUrl = state.menuUrl;
   savedMood = JSON.stringify([state.mood, state.craving]);
+  window.dispatchEvent(new Event('forkcast:saved'));
 }
 function hasSavedDetails(state) {
   return Object.values(state.profile).some(Boolean) || !!state.mood || !!state.craving || state.feedback.length > 0 || !!state.menuUrl;
@@ -405,16 +416,19 @@ function storageDescription() {
 }
 function updateStorageLabels() {
   const pill = document.querySelector('.pill');
-  pill.textContent = storageMode === 'server' ? 'Server storage · AI features pending' : storageMode === 'local' ? 'Browser-only preview · No AI connected' : 'Server unavailable · No data saved';
+  pill.textContent = storageMode === 'server' ? 'Server storage · Explicit AI actions' : storageMode === 'local' ? 'Browser-only preview · No AI connected' : 'Server unavailable · No data saved';
   if (storageMode !== 'server') return;
+  document.querySelector('.hero-note').textContent = 'Analyze a sample menu photo, save the reviewed dishes, then explicitly generate recommendations. AI service availability is not guaranteed.';
+  document.querySelector('#view-overview .preview-note h3').textContent = 'Read. Review. Choose.';
+  document.querySelector('.journey-row[data-view="picks"] .row-tag').textContent = 'Reviewed menu required';
   document.getElementById('clear-data').textContent = 'Clear saved data';
   document.querySelector('#profile-form .form-footer p').textContent = 'Saved to SQLite for this guest browser. No accounts or cross-device sync yet.';
   document.querySelector('#mood-form .form-footer p').textContent = 'This saves your craving to the server, then opens the restaurant-menu step.';
   document.querySelector('#feedback-form .form-footer p').textContent = 'Review and resized meal photo save to this server for this guest browser. Preference learning is not connected.';
-  document.getElementById('meal-photo-help').textContent = 'One JPEG, PNG, or WebP photo up to 10 MB. The app resizes it before saving with your review to the server. Original photo metadata is not retained. Photos are not sent to an AI service in step 1.';
+  document.getElementById('meal-photo-help').textContent = 'One JPEG, PNG, or WebP photo up to 10 MB. The app resizes it before saving with your review to the server. Original photo metadata is not retained. Meal photos are not sent to an AI service.';
   document.querySelector('#view-feedback .section-heading .muted').textContent = 'Saved to this guest workspace';
   document.getElementById('menu-link-help').textContent = 'Paste a full http:// or https:// restaurant menu URL. The link saves to this server for this guest browser; the website is not imported or analyzed.';
-  document.querySelector('#view-overview .preview-note p').textContent = 'Food preferences, cravings, restaurant links, and meal reviews save to SQLite for this guest browser. Menu reading, recommendations, and preference learning are not connected.';
+  document.querySelector('#view-overview .preview-note p').textContent = 'Saved cravings and preferences personalize explicit dish recommendations from a reviewed menu. Photo analysis uses Qwen; ranking uses DeepSeek. Configuration does not guarantee availability. Links are save-only; learning is not connected.';
 }
 async function initializePersistence() {
   lockSavedForms(true);
@@ -454,13 +468,14 @@ document.getElementById('dismiss-import').addEventListener('click', () => {
 function renderSystemStatus() {
   const connected = storageMode === 'server' && !lastConnectionError;
   const health = serverClient.health;
+  document.getElementById('features-health').textContent = connected && health.features && (health.features.menu_extraction || health.features.menu_analysis || health.features.recommendations) ? 'Explicit photo analysis and reviewed-menu recommendations are implemented. Availability is not checked here. Preference learning is not connected.' : 'Menu reading and recommendations are unavailable here. Preference learning is not connected.';
   document.getElementById('server-health').textContent = connected ? 'Connected · same-origin Python API' : storageMode === 'local' ? 'Browser-only preview · Python backend not running at this address' : 'Unavailable · reload to reconnect';
   document.getElementById('database-health').textContent = connected ? `Ready · schema ${health.database.schema_version}` : 'Not available to this page';
   for (const role of ['text', 'vision']) {
     const configured = health && health.services && health.services[role] && health.services[role].configured;
     document.getElementById(role + '-health').textContent = configured ? 'Configured · live availability not checked here' : 'Not configured or not available';
   }
-  document.getElementById('guest-storage-description').textContent = storageMode === 'server' ? 'Your saved profile, craving, restaurant link, reviews, and meal photos are stored in SQLite on this server, isolated to this guest browser. Menu-photo previews are not stored. There are no accounts or cross-device syncing yet.' : 'This page is not using server persistence. Browser-only preview data stays in this browser; it is not automatically imported when a backend becomes available.';
+  document.getElementById('guest-storage-description').textContent = storageMode === 'server' ? 'Your saved profile, craving, restaurant link, reviewed/extracted menu, recommendations, reviews, and meal photos are stored in SQLite on this server, isolated to this guest browser. Original menu-photo uploads and previews are not stored. There are no accounts or cross-device syncing yet.' : 'This page is not using server persistence. Browser-only preview data stays in this browser; it is not automatically imported when a backend becomes available.';
   document.getElementById('connection-message').textContent = lastConnectionError || (connected ? 'Server and database checked. No AI requests were made.' : 'Start the documented Python backend, then reload this page.');
   document.getElementById('refresh-status').textContent = storageMode === 'offline' ? 'Reload to reconnect' : 'Refresh connection status';
 }
@@ -474,4 +489,18 @@ document.getElementById('refresh-status').addEventListener('click', async event 
   } catch (error) { lastConnectionError = error.message; }
   finally { button.disabled = false; renderSystemStatus(); }
 });
-initializePersistence();
+window.ForkCastApp = {
+  get mode() { return storageMode; },
+  get ready() { return storageReady; },
+  get busy() { return saveBusy; },
+  get revision() { return serverClient.revision; },
+  get context() { const [mood, craving] = JSON.parse(savedMood); return { profile: JSON.parse(savedProfile), mood, craving }; },
+  async withServerOperation(task) {
+    if (!storageReady || saveBusy || storageMode !== 'server') throw new Error('Please wait for the server to be ready.');
+    saveBusy = true;
+    lockSavedForms(true);
+    try { return await task(); }
+    finally { saveBusy = false; lockSavedForms(!storageReady); }
+  }
+};
+window.ForkCastApp.readinessPromise = initializePersistence().then(() => { window.dispatchEvent(new Event('forkcast:ready')); });

@@ -121,7 +121,7 @@ test('confirmed clear is persisted for this live guest', async ({ page }) => {
 test('server health exposes feature boundaries but no secrets or endpoints', async ({ page }) => {
   const response = await page.request.get('/api/health');
   const health = await response.json();
-  expect(health.features).toEqual({ menu_extraction: false, recommendations: false, preference_learning: false });
+  expect(health.features).toEqual({ menu_extraction: true, recommendations: true, preference_learning: false });
   expect(JSON.stringify(health)).not.toMatch(/api_key|base_url|dobolyi|Bearer/i);
   for (const path of ['/.env', '/.git/config', '/data/forkcast.sqlite3', '/backend/main.py']) expect((await page.request.get(path)).status()).toBe(404);
   await page.goto('/#system');

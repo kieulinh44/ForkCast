@@ -10,7 +10,7 @@ def test_health(tmp_path):
     client = TestClient(create_app(Settings(db_path=tmp_path / 'state.db')))
     response = client.get('/api/health')
     assert response.status_code == 200
-    assert response.json() == {'ok': True, 'database': {'ok': True, 'schema_version': 1}, 'services': {'text': {'configured': False}, 'vision': {'configured': False}}, 'features': {'menu_extraction': False, 'recommendations': False, 'preference_learning': False}}
+    assert response.json() == {'ok': True, 'database': {'ok': True, 'schema_version': 2}, 'services': {'text': {'configured': False}, 'vision': {'configured': False}}, 'features': {'menu_extraction': True, 'recommendations': True, 'preference_learning': False}}
     assert not client.cookies
 
 

@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && useradd --system --uid 10001 --create-home forkcast \
     && mkdir /data && chown forkcast:forkcast /data
 COPY backend/ ./backend/
-COPY index.html app.js state.js styles.css server-state.js ./
+COPY index.html app.js menu-flow.js state.js styles.css server-state.js ./
 COPY assets/*.svg ./assets/
 USER forkcast
 VOLUME ["/data"]

@@ -1,6 +1,6 @@
-# ForkCast step-one backend
+# ForkCast backend — step 2
 
-This is the Python/SQLite foundation, not AI menu extraction, recommendations, accounts, or preference learning. The existing frontend is served from the same origin. Use sample data only. Guest cookies are bearer credentials, not authenticated accounts; anyone possessing a cookie can access that guest's draft. There is no account recovery, cross-device identity, encryption-at-rest, retention administrator, or public-production safety claim.
+The Python/SQLite foundation now supports explicit menu-photo extraction, editable review and grounded recommendations. Accounts and preference learning are not implemented. The existing frontend is served from the same origin. Use sample data only. Guest cookies are bearer credentials, not authenticated accounts; anyone possessing a cookie can access that guest's draft. There is no account recovery, cross-device identity, encryption-at-rest, retention administrator, or public-production safety claim.
 
 ## Fresh clone / local development
 
@@ -42,7 +42,7 @@ Root `.env` is read without changing the process environment. Process environmen
 
 ## API and data contract
 
-- `GET /api/health`: `{ok:true,database:{ok:true,schema_version:1},services:{text:{configured:boolean},vision:{configured:boolean}},features:{menu_extraction:false,recommendations:false,preference_learning:false}}`. Checks SQLite only; no guest creation. Database failure or unsupported newer schema returns 503.
+- `GET /api/health`: `{ok:true,database:{ok:true,schema_version:2},services:{text:{configured:boolean},vision:{configured:boolean}},features:{menu_extraction:true,recommendations:true,preference_learning:false}}`. Checks SQLite only; no guest creation. Database failure or unsupported newer schema returns 503.
 - `GET /api/state`: `{state:{profile:{},mood:"",craving:"",feedback:[],menuUrl:""},revision:0}` for a new guest. Missing, malformed, unknown, or expired cookies create a fresh opaque guest here only.
 - `PUT /api/state`: JSON `{state:<entire validated state>,revision:<current integer>}`. Returns the saved envelope with revision incremented once.
 - `DELETE /api/state`: JSON `{revision:<current integer>}`. Returns the empty state with revision incremented once. Clears only this guest, not the database or other guests; retains the guest cookie.
@@ -80,7 +80,7 @@ TMPDIR="$HOME/.cache/forkcast-tests" .venv/bin/python -m pytest tests/backend -q
 
 Coverage includes health, schema failures, persistence across app recreation, guest isolation/expiry, optimistic conflicts/concurrency, database lock failures, validation boundaries, CSRF/origin rules, body limits with actual multiple ASGI chunks, static traversal/secret blocking, cookie flags, environment precedence, and successful/failed mocked endpoint checks. The resolved Starlette version currently emits one test-only deprecation warning about HTTPX TestClient support; runtime and tests still work. No live endpoint call is made by this test suite.
 
-## Recorded verification
+## Historical step-1 implementation verification
 
 Implementation runs (Python 3.12.6): initial missing-health test red (1 failed), then green (1 passed); persistence route red (1 failed, 1 passed), then green (2 passed); validation/security group red (26 failed, 4 passed), then green (30 passed); endpoint CLI group red (9 failed), then combined green (39 passed); relative configuration regression red (1 failed, 43 passed), then final green **44 passed, 1 test-only Starlette deprecation warning**. Final run completed in 3.12 seconds. Dependency resolver targeted Python 3.11 compatibility; actual execution was Python 3.12, not a separately installed Python 3.11 runtime. `uv pip check` reported all 23 installed packages compatible. `compileall` and CLI `--help` passed. A real short-lived Uvicorn process, using a synthetic temporary database, returned health/UI 200, passed guest GET/PUT/DELETE, and blocked `.env` with 404; it was terminated after the check. No live AI calls were made by this backend task.
 
@@ -101,3 +101,25 @@ The Python 3.12 slim image runs non-root with one worker. It copies an explicit 
 Place it behind an HTTPS reverse proxy, set Secure cookies true, restrict the externally accepted hostnames, configure trusted forwarded headers only from the actual proxy address, and keep the app port private. Uvicorn's forwarded-IP trust must be tailored to the selected proxy network; never blindly trust all sources. Origin validation needs the proxy-preserved original Host and trusted HTTPS scheme. Recheck health, cookies, persistence after restart, both CLI services, 403 cross-origin writes, and 409 conflicts from that host before claiming deployment readiness. This step does not add public-service abuse controls, login, or rate limiting.
 
 Primary implementation references: FastAPI container/worker docs (`https://fastapi.tiangolo.com/deployment/docker/`, `https://fastapi.tiangolo.com/deployment/server-workers/`), HTTPX MockTransport (`https://www.python-httpx.org/advanced/transports/`), and SQLite WAL/PRAGMA references (`https://www.sqlite.org/wal.html`, `https://www.sqlite.org/pragma.html`).
+
+
+## Step 2 additions
+
+The database migrates transactionally to version 2, preserving version-1 guests and adding a guest-linked `workflows` table. It stores the current menu, workflow revision, recommendations, and a digest of saved profile/mood/craving. Original image bytes are not persisted. Clear-all deletes only the current guest's workflow; expiration cascades through foreign keys.
+
+New same-origin routes (existing guest cookie, Origin/custom-header/JSON/body-size guards apply):
+- `GET /api/menu`: current workflow envelope, state/workflow revisions and stale-context status.
+- `POST /api/menu/extract`: explicit bounded data-URL image extraction; successful nonempty output replaces the current menu as unreviewed. Failure preserves prior work.
+- `PUT /api/menu`: save the editable menu and mark it reviewed; invalidate old recommendations.
+- `POST /api/recommendations`: requires a saved reviewed menu; reads saved guest context, filters known explicit conflicts and comparable over-budget items, then validates model-selected IDs and exact source evidence. Names, prices and cautions are server-composed from canonical data.
+- `DELETE /api/menu`: clear only the guest's menu/results; preserve profile/craving.
+
+Every write carries `menu_revision` and `state_revision`; both are checked before and after inference. No database transaction stays open during an upstream request. A per-guest in-process guard rejects overlapping model requests (429) and always releases after success/failure. This is a single-worker local foundation, not public abuse protection. Model requests use bounded timeouts/responses and strict final JSON/model/finish validation; errors do not echo upstream responses or secrets.
+
+Menus support 1–40 named dishes. Prices must be finite/nonnegative numbers or null. A dollar sign alone does not establish USD; different/unknown currencies are never silently converted. Unknown-price candidates can appear with unverified-budget warnings, but comparable known over-budget dishes are excluded. Common term mappings are incomplete and conservative, not an allergy-safety or religious-compliance assessment. Every suggestion requires confirmation with staff.
+
+Browser inputs support JPEG/PNG/WebP up to 10 MB and 40 megapixels, normalized to a metadata-free JPEG at most 2400px on the longest edge. The API independently verifies actual JPEG/PNG/WebP bytes, single-frame images, a 3.8 MB decoded-byte cap and a 20-megapixel cap; browser-normalized images are below that pixel cap. The inherited request-body cap remains 5 MiB. No remote image URLs, PDFs or website fetching are accepted in this stage.
+
+Profile `currency` is optional and uppercase three-letter; existing profiles default to USD for budget comparison, consistent with the previous USD budget field. Food mood alone can support a craving match; free text is not required. Feedback is not used for learning.
+
+Full route/data shapes are documented in `docs/step-2-contract.md`. Ordinary Python/browser tests mock upstream responses; explicit `npx playwright test --config playwright.ai.config.cjs` calls real configured services using a synthetic fixture. Do not run it accidentally in CI or with private inputs. The class endpoints still use unencrypted HTTP, and public deployment/actual-host connectivity/Docker runtime/physical-phone checks remain separate unverified concerns.

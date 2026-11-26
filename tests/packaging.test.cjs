@@ -15,3 +15,10 @@ test('Docker copy sources exist in the reproducible source package', () => {
     }
   }
 });
+
+test('Docker context includes every explicitly copied public frontend file', () => {
+  const dockerfile = fs.readFileSync(path.join(root, 'Dockerfile'), 'utf8');
+  const keep = new Set(fs.readFileSync(path.join(root, '.dockerignore'), 'utf8').split(/\r?\n/).filter(line => line.startsWith('!')));
+  const line = dockerfile.split('\n').find(line => line.startsWith('COPY index.html '));
+  for (const source of line.split(/\s+/).slice(1, -1)) assert.ok(keep.has('!' + source), `${source} excluded from Docker context`);
+});
